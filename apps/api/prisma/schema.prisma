@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model UserProfile {
+  id                  String       @id @default(uuid())
+  authProvider        String       @default("cognito")
+  authSubject         String
+  email               String
+  firstName           String?
+  lastName            String?
+  displayName         String?
+  onboardingCompleted Boolean      @default(false)
+  answers             UserAnswer[]
+  recipeSelections   UserRecipeSelection[]
+  preferenceProfile  UserPreferenceProfile?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@unique([authProvider, authSubject], map: "user_profiles_auth_provider_auth_subject_key")
+  @@map("user_profiles")
+}
+
+model Question {
+  id         String           @id @default(uuid())
+  key        String           @unique
+  label      String
+  type       QuestionType
+  isRequired Boolean          @default(false)
+  sortOrder  Int              @default(0)
+  isActive   Boolean          @default(true)
+  options    QuestionOption[]
+  answers    UserAnswer[]
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String      @id @default(uuid())
+  questionId String
+  value      String
+  label      String
+  sortOrder  Int         @default(0)
+  isActive   Boolean     @default(true)
+  question   Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers    UserAnswer[]
+
+  @@unique([questionId, value])
+  @@map("question_options")
+}
+
+model UserAnswer {
+  id         String          @id @default(uuid())
+  userId     String
+  questionId String
+  optionId   String?
+  answerText String?
+  user       UserProfile     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  option     QuestionOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([questionId])
+  @@map("user_answers")
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  FREE_TEXT
+}
+
+model CuratedRecipeImage {
+  id         String   @id @default(uuid())
+  s3Key      String   @unique
+  title      String
+  cuisine    String?
+  dietTags   Json
+  proteinTags Json
+  spiceLevel String?
+  extraTags  Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  selections UserRecipeSelection[]
+
+  @@map("curated_recipe_images")
+}
+
+model UserRecipeSelection {
+  id        String   @id @default(uuid())
+  userId    String
+  imageId   String
+  isSelected Boolean
+  createdAt DateTime @default(now())
+
+  user      UserProfile       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  image     CuratedRecipeImage @relation(fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, imageId], map: "user_recipe_selection_unique")
+  @@index([userId])
+  @@map("user_recipe_selections")
+}
+
+model UserPreferenceProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  likes          Json
+  dislikes       Json
+  dietSignals    Json
+  confidence     Json
+  rawModelOutput Json
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preference_profiles")
+}
+

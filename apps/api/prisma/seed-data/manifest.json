@@ -1,0 +1,242 @@
+[
+  {
+    "id": "spaghetti-carbonara",
+    "filename": "images/spaghetti-carbonara.jpg",
+    "tags": {
+      "cuisine": "italian",
+      "protein": "pork",
+      "mealType": "dinner",
+      "dietary": [],
+      "flavor": ["savory", "creamy"],
+      "complexity": "medium"
+    }
+  },
+  {
+    "id": "chicken-tikka-masala",
+    "filename": "images/chicken-tikka-masala.jpg",
+    "tags": {
+      "cuisine": "indian",
+      "protein": "chicken",
+      "mealType": "dinner",
+      "dietary": [],
+      "flavor": ["spicy", "savory"],
+      "complexity": "medium"
+    }
+  },
+  {
+    "id": "avocado-toast-egg",
+    "filename": "images/avocado-toast-egg.jpg",
+    "tags": {
+      "cuisine": "american",
+      "protein": "egg",
+      "mealType": "breakfast",
+      "dietary": ["vegetarian"],
+      "flavor": ["fresh", "mild"],
+      "complexity": "easy"
+    }
+  },
+  {
+    "id": "beef-tacos-street",
+    "filename": "images/beef-tacos-street.jpg",
+    "tags": {
+      "cuisine": "mexican",
+      "protein": "beef",
+      "mealType": "lunch",
+      "dietary": [],
+      "flavor": ["spicy", "savory"],
+      "complexity": "easy"
+    }
+  },
+  {
+    "id": "vegetable-green-curry",
+    "filename": "images/vegetable-green-curry.jpg",
+    "tags": {
+      "cuisine": "thai",
+      "protein": "none",
+      "mealType": "dinner",
+      "dietary": ["vegan", "vegetarian"],
+      "flavor": ["spicy", "aromatic"],
+      "complexity": "medium"
+    }
+  },
+  {
+    "id": "grilled-salmon-salad",
+    "filename": "images/grilled-salmon-salad.jpg",
+    "tags": {
+      "cuisine": "american",
+      "protein": "fish",
+      "mealType": "lunch",
+      "dietary": ["gluten-free"],
+      "flavor": ["fresh", "light"],
+      "complexity": "easy"
+    }
+  },
+  {
+    "id": "pepperoni-pizza",
+    "filename": "images/pepperoni-pizza.jpg",
+    "tags": {
+      "cuisine": "italian",
+      "protein": "pork",
+      "mealType": "dinner",
+      "dietary": [],
+      "flavor": ["savory", "rich"],
+      "complexity": "hard"
+    }
+  },
+  {
+    "id": "japanese-ramen-bowl",
+    "filename": "images/japanese-ramen-bowl.jpg",
+    "tags": {
+      "cuisine": "japanese",
+      "protein": "pork",
+      "mealType": "dinner",
+      "dietary": [],
+      "flavor": ["savory", "umami"],
+      "complexity": "hard"
+    }
+  },
+  {
+    "id": "greek-salad-feta",
+    "filename": "images/greek-salad-feta.jpg",
+    "tags": {
+      "cuisine": "mediterranean",
+      "protein": "none",
+      "mealType": "lunch",
+      "dietary": ["vegetarian", "gluten-free"],
+      "flavor": ["fresh", "light"],
+      "complexity": "easy"
+    }
+  },
+  {
+    "id": "beef-burger-fries",
+    "filename": "images/beef-burger-fries.jpg",
+    "tags": {
+      "cuisine": "american",
+      "protein": "beef",
+      "mealType": "lunch",
+      "dietary": [],
+      "flavor": ["savory", "rich"],
+      "complexity": "easy"
+    }
+  },
+  {
+    "id": "pad-thai-noodles",
+    "filename": "images/pad-thai-noodles.jpg",
+    "tags": {
+      "cuisine": "thai",
+      "protein": "shrimp",
+      "mealType": "dinner",
+      "dietary": [],
+      "flavor": ["sweet", "savory"],
+      "complexity": "medium"
+    }
+  },
+  {
+    "id": "mushroom-risotto",
+    "filename": "images/mushroom-risotto.jpg",
+    "tags": {
+      "cuisine": "italian",
+      "protein": "none",
+      "mealType": "dinner",
+      "dietary": ["vegetarian"],
+      "flavor": ["creamy", "savory"],
+      "complexity": "hard"
+    }
+  },
+  {
+    "id": "moroccan-lamb-tagine",
+    "filename": "images/moroccan-lamb-tagine.jpg",
+    "tags": {
+      "cuisine": "moroccan",
+      "protein": "lamb",
+      "mealType": "dinner",
+      "dietary": [],
+      "flavor": ["spicy", "aromatic"],
+      "complexity": "hard"
+    }
+  },
+  {
+    "id": "acai-breakfast-bowl",
+    "filename": "images/acai-breakfast-bowl.jpg",
+    "tags": {
+      "cuisine": "brazilian",
+      "protein": "none",
+      "mealType": "breakfast",
+      "dietary": ["vegan", "vegetarian", "gluten-free"],
+      "flavor": ["sweet", "fresh"],
+      "complexity": "easy"
+    }
+  },
+  {
+    "id": "korean-bbq-beef",
+    "filename": "images/korean-bbq-beef.jpg",
+    "tags": {
+      "cuisine": "korean",
+      "protein": "beef",
+      "mealType": "dinner",
+      "dietary": [],
+      "flavor": ["sweet", "savory"],
+      "complexity": "medium"
+    }
+  },
+  {
+    "id": "eggs-benedict-brunch",
+    "filename": "images/eggs-benedict-brunch.jpg",
+    "tags": {
+      "cuisine": "american",
+      "protein": "egg",
+      "mealType": "breakfast",
+      "dietary": [],
+      "flavor": ["rich", "savory"],
+      "complexity": "hard"
+    }
+  },
+  {
+    "id": "falafel-wrap-pita",
+    "filename": "images/falafel-wrap-pita.jpg",
+    "tags": {
+      "cuisine": "middleeastern",
+      "protein": "none",
+      "mealType": "lunch",
+      "dietary": ["vegan", "vegetarian"],
+      "flavor": ["savory", "fresh"],
+      "complexity": "medium"
+    }
+  },
+  {
+    "id": "shrimp-stir-fry-vegetables",
+    "filename": "images/shrimp-stir-fry-vegetables.jpg",
+    "tags": {
+      "cuisine": "chinese",
+      "protein": "shrimp",
+      "mealType": "dinner",
+      "dietary": ["gluten-free"],
+      "flavor": ["savory", "light"],
+      "complexity": "easy"
+    }
+  },
+  {
+    "id": "french-onion-soup",
+    "filename": "images/french-onion-soup.jpg",
+    "tags": {
+      "cuisine": "french",
+      "protein": "none",
+      "mealType": "dinner",
+      "dietary": ["vegetarian"],
+      "flavor": ["rich", "savory"],
+      "complexity": "medium"
+    }
+  },
+  {
+    "id": "mango-sticky-rice",
+    "filename": "images/mango-sticky-rice.jpg",
+    "tags": {
+      "cuisine": "thai",
+      "protein": "none",
+      "mealType": "dessert",
+      "dietary": ["vegan", "vegetarian", "gluten-free"],
+      "flavor": ["sweet"],
+      "complexity": "medium"
+    }
+  }
+]
