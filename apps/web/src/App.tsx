@@ -1,17 +1,31 @@
-﻿import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { confirmSignUp, resendCode, signIn, signUp } from "./lib/auth/cognito";
-import { getMe } from "./lib/api/onboarding";
-import { OnboardingQuestionnaire } from "./components/OnboardingQuestionnaire";
-import { RecipePreferencePicker } from "./components/RecipePreferencePicker";
-import { submitRecipeSelections } from "./lib/api/onboarding";
-
+import { getMe } from "./features/onboarding/api/onboarding";
+import { OnboardingQuestionnaire } from "./features/onboarding/components/OnboardingQuestionnaire";
+import { RecipePreferencePicker } from "./features/onboarding/components/RecipePreferencePicker";
+import { submitRecipeSelections } from "./features/onboarding/api/onboarding";
+import { HomePage } from "./features/home/pages/HomePage";
+import { LoginPage } from "./features/auth/pages/LoginPage";
+import { SignUpPage } from "./features/auth/pages/SignUpPage";
+import type { HomeSpecial, PreferenceProfile } from "./features/home/types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8788";
+const DEFAULT_SPECIAL_IMAGE =
+  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=2600&q=95";
 
-type View = "auth" | "onboarding" | "onboarding-recipe-picks" | "home";
+type View = "home" | "auth" | "onboarding" | "onboarding-recipe-picks";
+
+type HomePayload = {
+  todaySpecial?: HomeSpecial;
+  navigation?: {
+    pantryPath?: string;
+    communityPath?: string;
+  };
+};
 
 export function App() {
-  const [view, setView] = useState<View>("auth");
+  const [view, setView] = useState<View>("home");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,6 +35,60 @@ export function App() {
 
   const [token, setToken] = useState("");
   const [result, setResult] = useState("");
+  const [homeData, setHomeData] = useState<HomePayload | null>(null);
+  const [homeLoading, setHomeLoading] = useState(false);
+  const [homeError, setHomeError] = useState("");
+  const [heroImageBroken, setHeroImageBroken] = useState(false);
+
+  const [preferenceProfile, setPreferenceProfile] = useState<PreferenceProfile | null>(null);
+
+  const isLoggedIn = Boolean(token);
+  const special = homeData?.todaySpecial;
+
+  const heroImageSrc = useMemo(() => {
+    if (special?.imageUrl && !heroImageBroken) return special.imageUrl;
+    return DEFAULT_SPECIAL_IMAGE;
+  }, [special?.imageUrl, heroImageBroken]);
+
+  async function fetchHome() {
+    try {
+      setHomeLoading(true);
+      setHomeError("");
+      setHeroImageBroken(false);
+
+      const res = await fetch(`${API_BASE}/home`);
+      const data = (await res.json()) as HomePayload;
+
+      if (!res.ok) {
+        setHomeError(`Failed to load home (${res.status})`);
+        return;
+      }
+
+      setHomeData(data);
+    } catch (e) {
+      setHomeError(`Failed to load home: ${String((e as Error).message || e)}`);
+    } finally {
+      setHomeLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (view === "home" || view === "auth") {
+      void fetchHome();
+    }
+  }, [view]);
+
+  useEffect(() => {
+    if (!special?.imageUrl) {
+      setHeroImageBroken(false);
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => setHeroImageBroken(false);
+    image.onerror = () => setHeroImageBroken(true);
+    image.src = special.imageUrl;
+  }, [special?.imageUrl]);
 
   const onSignUp = async () => {
     try {
@@ -31,6 +99,8 @@ export function App() {
         familyName: familyName.trim(),
       });
       setResult("Signup success. Check email for verification code.");
+      setView("auth");
+      setAuthMode("signup");
     } catch (e) {
       setResult(`Signup error: ${String((e as Error).message || e)}`);
     }
@@ -40,6 +110,7 @@ export function App() {
     try {
       await confirmSignUp(email.trim(), code.trim());
       setResult("Verification success. You can login now.");
+      setAuthMode("login");
     } catch (e) {
       setResult(`Confirm error: ${String((e as Error).message || e)}`);
     }
@@ -87,17 +158,10 @@ export function App() {
 
   const onLogout = () => {
     setToken("");
-    setView("auth");
+    setPreferenceProfile(null);
+    setView("home");
     setResult("Logged out.");
   };
-
-  const [preferenceProfile, setPreferenceProfile] = useState<{
-    likes: string[];
-    dislikes: string[];
-    dietSignals: string[];
-    confidence: { likes: number; dislikes: number; overall: number };
-  } | null>(null);
-
 
   if (view === "onboarding") {
     return (
@@ -116,7 +180,6 @@ export function App() {
       <RecipePreferencePicker
         onSubmitSelection={async ({ selectedImageIds, rejectedImageIds }) => {
           const res = await submitRecipeSelections(token, { selectedImageIds, rejectedImageIds });
-
           const profile = res?.preferenceProfile;
           setPreferenceProfile({
             likes: Array.isArray(profile?.likes) ? profile.likes : [],
@@ -136,74 +199,62 @@ export function App() {
     );
   }
 
-  if (view === "home") {
+  if (view === "auth" && authMode === "login") {
     return (
-      <main style={{ fontFamily: "system-ui", padding: 24, maxWidth: 900, margin: "0 auto" }}>
-        <h1>PantryPal Home</h1>
-        <p>You are logged in and onboarding is complete.</p>
-        <button onClick={onLogout}>Logout</button>
-        {preferenceProfile ? (
-          <section style={{ marginTop: 16, border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-            <h2 style={{ marginTop: 0 }}>Your Food Preference Profile</h2>
-            <p><strong>Likely likes:</strong> {preferenceProfile.likes.join(", ") || "N/A"}</p>
-            <p><strong>Likely dislikes:</strong> {preferenceProfile.dislikes.join(", ") || "N/A"}</p>
-            <p><strong>Diet signals:</strong> {preferenceProfile.dietSignals.join(", ") || "N/A"}</p>
-            <p>
-              <strong>Confidence:</strong> overall{" "}
-              {Math.round(preferenceProfile.confidence.overall * 100)}%
-            </p>
-          </section>
-        ) : (
-          <p style={{ marginTop: 16 }}>{result}</p>
-        )}
+      <LoginPage
+        email={email}
+        password={password}
+        result={result}
+        heroImageSrc={heroImageSrc}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onLogin={onLogin}
+        onGoSignUp={() => setAuthMode("signup")}
+        onBackHome={() => setView("home")}
+      />
+    );
+  }
 
-      </main>
+  if (view === "auth" && authMode === "signup") {
+    return (
+      <SignUpPage
+        email={email}
+        password={password}
+        givenName={givenName}
+        familyName={familyName}
+        code={code}
+        result={result}
+        heroImageSrc={heroImageSrc}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onGivenNameChange={setGivenName}
+        onFamilyNameChange={setFamilyName}
+        onCodeChange={setCode}
+        onSignUp={onSignUp}
+        onConfirm={onConfirm}
+        onResend={onResend}
+        onGoLogin={() => setAuthMode("login")}
+        onBackHome={() => setView("home")}
+      />
     );
   }
 
   return (
-    <main style={{ fontFamily: "system-ui", padding: 24, maxWidth: 900, margin: "0 auto" }}>
-      <h1>Auth Test</h1>
-
-      <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
-        <input placeholder="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input
-          placeholder="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <input
-          placeholder="given name"
-          value={givenName}
-          onChange={(e) => setGivenName(e.target.value)}
-        />
-        <input
-          placeholder="family name"
-          value={familyName}
-          onChange={(e) => setFamilyName(e.target.value)}
-        />
-        <input
-          placeholder="verification code"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
-      </div>
-
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <button onClick={onSignUp}>Sign up</button>
-        <button onClick={onConfirm}>Confirm code</button>
-        <button onClick={onResend}>Resend code</button>
-        <button onClick={onLogin}>Login + bootstrap</button>
-      </div>
-
-      <p>
-        <strong>ID token:</strong> {token ? "received" : "not received"}
-      </p>
-
-      <pre style={{ background: "#f6f6f6", padding: 12, borderRadius: 8, overflowX: "auto" }}>
-        {result || "Result here"}
-      </pre>
-    </main>
+    <HomePage
+      heroImageSrc={heroImageSrc}
+      special={special}
+      homeLoading={homeLoading}
+      homeError={homeError}
+      isLoggedIn={isLoggedIn}
+      preferenceProfile={preferenceProfile}
+      result={result}
+      onHome={() => setView("home")}
+      onLogout={onLogout}
+      onLoginNavigate={() => {
+        setAuthMode("login");
+        setView("auth");
+      }}
+    />
   );
 }
+

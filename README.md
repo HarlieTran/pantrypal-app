@@ -39,6 +39,9 @@ DATABASE_URL=postgresql://<user>:<password>@<host>:5432/<db>?schema=pantrypal_ap
 COGNITO_REGION=us-east-2
 COGNITO_USER_POOL_ID=us-east-2_xxxxxxxx
 COGNITO_APP_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+AWS_REGION=us-east-2
+CURATED_RECIPES_BUCKET=pantrypal-recipe-images
+CURATED_RECIPES_PREFIX=images
 ```
 
 Create `apps/web/.env`:
@@ -48,6 +51,24 @@ VITE_API_BASE_URL=http://localhost:8788
 VITE_COGNITO_REGION=us-east-2
 VITE_COGNITO_USER_POOL_ID=us-east-2_xxxxxxxx
 VITE_COGNITO_APP_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+### Local AWS profile for S3-backed recipe images
+When running API locally, ensure the same terminal has an AWS identity that can read
+`pantrypal-recipe-images/images/*`.
+
+PowerShell:
+```powershell
+$env:AWS_PROFILE="your-profile-name"
+aws sts get-caller-identity
+npm run dev:api
+```
+
+Command Prompt:
+```cmd
+set AWS_PROFILE=your-profile-name
+aws sts get-caller-identity
+npm run dev:api
 ```
 
 ## AWS deploy: Lambda + Amplify

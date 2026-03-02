@@ -128,3 +128,29 @@ model UserPreferenceProfile {
   @@map("user_preference_profiles")
 }
 
+model DailySpecial {
+  id              String    @id @default(uuid()) @db.Uuid
+  specialDate     DateTime  @map("special_date") @db.Date
+  locale          String    @default("global") @db.VarChar(32)
+  dishName        String    @map("dish_name") @db.VarChar(255)
+  cuisine         String?   @db.VarChar(100)
+  origin          String?   @db.VarChar(100)
+  description     String?
+  history         String?
+  culturalMeaning String?   @map("cultural_meaning")
+  inspiredBy      String?   @map("inspired_by")
+  funFact         String?   @map("fun_fact")
+  ingredients     Json?     @db.JsonB
+  instructions    Json?     @db.JsonB
+  imageUrl        String?   @map("image_url")
+  imageS3Key      String?   @map("image_s3_key")
+  sourceModel     String?   @map("source_model") @db.VarChar(120)
+  rawPayload      Json?     @map("raw_payload") @db.JsonB
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@unique([specialDate, locale], map: "daily_specials_special_date_locale_key")
+  @@map("daily_specials")
+}
+
+

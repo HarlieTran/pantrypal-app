@@ -9,6 +9,8 @@ import {
 } from "../modules/users/users.service.js";
 import { getRandomRecipeImages } from "../modules/users/users.service.js";
 import { submitRecipeSelections } from "../modules/users/users.service.js";
+import { getOrCreateDailySpecial } from "../modules/home/home.service.js";
+
 
 
 
@@ -120,6 +122,34 @@ export async function handleApiRoute(
     }
   }
 
+  if (method === "GET" && path === "/home") {
+    try {
+      const todaySpecial = await getOrCreateDailySpecial("global");
+      return {
+        statusCode: 200,
+        body: {
+          todaySpecial,
+          navigation: {
+            pantryPath: "/pantry",
+            communityPath: "/community",
+          },
+        },
+      };
+    } catch (error) {
+      console.error("home error:", error);
+      return { statusCode: 500, body: { error: "Server error" } };
+    }
+  }
+
+  if (method === "POST" && path === "/internal/home/prewarm") {
+    const key = authHeader?.replace("Bearer ", "") || "";
+    if (!process.env.INTERNAL_WORKER_KEY || key !== process.env.INTERNAL_WORKER_KEY) {
+      return { statusCode: 401, body: { error: "Unauthorized" } };
+    }
+
+    const todaySpecial = await getOrCreateDailySpecial("global");
+    return { statusCode: 200, body: { todaySpecial } };
+  }
 
 
   return { statusCode: 404, body: { error: "Not found" } };

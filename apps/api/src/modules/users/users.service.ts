@@ -1,11 +1,14 @@
 import { prisma } from "../../common/db/prisma.js";
 import type { AuthClaims } from "../../common/auth/jwt.js";
-import { getRecipeImageSignedUrl } from "../../common/storage/s3.js";
+import { getRecipeImageUrl } from "../../common/storage/s3.js";
 import { inferPreferencesFromSelections } from "../../common/ai/bedrock.js";
 
 
 
 const AUTH_PROVIDER = "cognito";
+const DEFAULT_RECIPE_IMAGE_URL =
+  process.env.DEFAULT_RECIPE_IMAGE_URL ||
+  "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=1200&q=80";
 
 export async function bootstrapUser(claims: AuthClaims) {
   const sub = claims.sub;
@@ -132,10 +135,13 @@ export async function getRandomRecipeImages(count = 6) {
   const selected = shuffled.slice(0, Math.min(safeCount, shuffled.length));
 
   return Promise.all(
-    selected.map(async (img) => ({
-      ...img,
-      imageUrl: await getRecipeImageSignedUrl(img.s3Key),
-    })),
+    selected.map(async (img) => {
+      const imageUrl = await getRecipeImageUrl(img.s3Key);
+      return {
+        ...img,
+        imageUrl: imageUrl || DEFAULT_RECIPE_IMAGE_URL,
+      };
+    }),
   );
 }
 
