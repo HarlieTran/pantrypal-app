@@ -17,8 +17,9 @@ model UserProfile {
   displayName         String?
   onboardingCompleted Boolean      @default(false)
   answers             UserAnswer[]
-  recipeSelections   UserRecipeSelection[]
-  preferenceProfile  UserPreferenceProfile?
+  recipeSelections    UserRecipeSelection[]
+  preferenceProfile   UserPreferenceProfile?
+  pantryMeta          PantryMeta?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
@@ -153,4 +154,41 @@ model DailySpecial {
   @@map("daily_specials")
 }
 
+model PantryMeta {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  itemCount     Int      @default(0)
+  expiringCount Int      @default(0)
+  lastUpdated   DateTime @default(now())
 
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("pantry_meta")
+}
+
+enum IngredientCategory {
+  produce
+  dairy
+  meat
+  seafood
+  grains
+  spices
+  condiments
+  frozen
+  beverages
+  snacks
+  other
+}
+
+model Ingredient {
+  id            String   @id @default(uuid())
+  canonicalName String   @unique
+  aliases       Json     @default("[]")
+  category      IngredientCategory?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([canonicalName])
+  @@map("ingredients")
+}

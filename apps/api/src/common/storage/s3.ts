@@ -9,7 +9,7 @@ if (!bucket) {
   console.warn("CURATED_RECIPES_BUCKET is missing");
 }
 
-const s3 = new S3Client({ region });
+export const s3 = new S3Client({ region });
 
 function resolveObjectKey(rawKey: string): string {
   if (rawKey.startsWith("s3://")) {

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { handleApiRoute } from "./http/router.js";
+import { handleApiRoute } from "./modules/api/index.js";
 
 type ApiGatewayEvent = {
   rawPath: string;
@@ -13,7 +13,7 @@ type ApiGatewayEvent = {
 const corsHeaders = {
   "content-type": "application/json",
   "access-control-allow-origin": process.env.FRONTEND_ORIGIN || "*",
-  "access-control-allow-methods": "GET,POST,PATCH,PUT,OPTIONS",
+  "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
   "access-control-allow-headers": "Content-Type,Authorization",
 };
 
@@ -48,3 +48,4 @@ export async function handler(event: ApiGatewayEvent) {
     body: JSON.stringify(response.body),
   };
 }
+

@@ -1,5 +1,5 @@
-﻿import cron from "node-cron";
-import { runDailySpecialPrewarm } from "./jobs/daily-special.job.js";
+import cron from "node-cron";
+import { runDailySpecialPrewarm } from "./features/daily-special/index.js";
 
 // 00:05 UTC daily
 cron.schedule("5 0 * * *", async () => {
@@ -11,3 +11,4 @@ cron.schedule("5 0 * * *", async () => {
 });
 
 console.log("worker started");
+

@@ -1,6 +1,8 @@
-import { PrismaClient, QuestionType } from "@prisma/client";
+import { PrismaClient, QuestionType, IngredientCategory } from "@prisma/client";
 import fs from "node:fs";
 import path from "node:path";
+import ingredientsData from "./seed-data/ingredients.json" assert { type: "json" };
+
 
 const prisma = new PrismaClient();
 
@@ -103,7 +105,31 @@ async function seedCuratedRecipeImages() {
   }
 }
 
+async function seedIngredients() {
+  console.log("Seeding ingredients...");
+
+  for (const item of ingredientsData) {
+    await prisma.ingredient.upsert({
+      where: { canonicalName: item.canonicalName },
+      update: {
+        aliases: item.aliases,
+        category: item.category as IngredientCategory,
+        isActive: true,
+      },
+      create: {
+        canonicalName: item.canonicalName,
+        aliases: item.aliases,
+        category: item.category as IngredientCategory,
+        isActive: true,
+      },
+    });
+  }
+
+  console.log(`Seeded ${ingredientsData.length} ingredients.`);
+}
+
 async function main() {
+  await seedIngredients();
   const allergies = await upsertQuestion("allergies", "Allergies", "MULTI_CHOICE", 1, false);
   const diet = await upsertQuestion("diet", "Diet Preference", "MULTI_CHOICE", 2, false);
   await upsertQuestion("allergies_other", "Other allergies", "FREE_TEXT", 3, false);

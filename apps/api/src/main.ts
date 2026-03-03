@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createServer } from "node:http";
-import { handleApiRoute } from "./http/router.js";
+import { handleApiRoute } from "./modules/api/index.js";
 
 const port = Number(process.env.PORT || 8788);
 const frontendOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
@@ -9,7 +9,7 @@ function sendJson(res: import("node:http").ServerResponse, status: number, body:
   res.writeHead(status, {
     "content-type": "application/json",
     "access-control-allow-origin": frontendOrigin,
-    "access-control-allow-methods": "GET,POST,PATCH,PUT,OPTIONS",
+    "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
     "access-control-allow-headers": "Content-Type,Authorization",
   });
   res.end(JSON.stringify(body));
@@ -36,3 +36,4 @@ const server = createServer(async (req, res) => {
 server.listen(port, () => {
   console.log(`API running on http://localhost:${port}`);
 });
+
