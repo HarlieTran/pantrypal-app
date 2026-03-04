@@ -1,258 +1,165 @@
 import { useEffect, useMemo, useState } from "react";
 import type { OnboardingAnswerInput, OnboardingQuestion } from "@pantrypal/shared-types";
-import { completeOnboarding, getOnboardingQuestions, saveAnswers } from "../api/onboarding";
+import { completeOnboarding, getOnboardingQuestions, saveAnswers } from "../../onboarding/api/onboarding";
 
 type Props = {
   token: string;
   onCompleted: () => void;
+  onBack: () => void;
 };
 
 type AnswersState = Record<string, { optionValues: string[]; answerText: string }>;
 
-function initAnswers(questions: OnboardingQuestion[]): AnswersState {
-  const state: AnswersState = {};
-  for (const q of questions) {
-    state[q.key] = { optionValues: [], answerText: "" };
-  }
-  return state;
-}
-
-export function OnboardingQuestionnaire({ token, onCompleted }: Props) {
+export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
   const [questions, setQuestions] = useState<OnboardingQuestion[]>([]);
   const [answers, setAnswers] = useState<AnswersState>({});
   const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState("");
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     let mounted = true;
-
     (async () => {
       try {
         const data = await getOnboardingQuestions();
         const list = Array.isArray(data?.questions) ? data.questions : [];
         if (!mounted) return;
         setQuestions(list);
-        setAnswers(initAnswers(list));
-      } catch (error) {
+        const state: AnswersState = {};
+        for (const q of list) state[q.key] = { optionValues: [], answerText: "" };
+        setAnswers(state);
+      } catch (e) {
         if (!mounted) return;
-        setResult(`Failed to load questions: ${String((error as Error).message || error)}`);
+        setError(String((e as Error).message || e));
       } finally {
         if (mounted) setLoading(false);
       }
     })();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
-  const requiredInvalid = useMemo(() => {
-    return questions.some((q) => {
-      if (!q.isRequired) return false;
-      const a = answers[q.key];
-      if (!a) return true;
-      if (q.type === "FREE_TEXT") return !a.answerText.trim();
-      return a.optionValues.length === 0;
-    });
-  }, [questions, answers]);
-
-  const groupedQuestions = useMemo(() => {
-    const childrenByParent = new Map<string, OnboardingQuestion[]>();
-    const parentQuestions: OnboardingQuestion[] = [];
-
-    for (const q of questions) {
-      const underscoreIndex = q.key.indexOf("_");
-      const maybeParentKey = underscoreIndex > 0 ? q.key.slice(0, underscoreIndex) : "";
-      const isFreeTextChild =
-        q.type === "FREE_TEXT" &&
-        maybeParentKey.length > 0 &&
-        questions.some((x) => x.key === maybeParentKey && x.type !== "FREE_TEXT");
-
-      if (isFreeTextChild) {
-        const existing = childrenByParent.get(maybeParentKey) ?? [];
-        existing.push(q);
-        childrenByParent.set(maybeParentKey, existing);
-        continue;
-      }
-
-      parentQuestions.push(q);
-    }
-
-    for (const list of childrenByParent.values()) {
-      list.sort((a, b) => a.sortOrder - b.sortOrder);
-    }
-    parentQuestions.sort((a, b) => a.sortOrder - b.sortOrder);
-
-    return { parentQuestions, childrenByParent };
-  }, [questions]);
-
-  const toggleMulti = (questionKey: string, value: string) => {
+  const toggleMulti = (key: string, value: string) => {
     setAnswers((prev) => {
-      const current = prev[questionKey] ?? { optionValues: [], answerText: "" };
-      const exists = current.optionValues.includes(value);
-      return {
-        ...prev,
-        [questionKey]: {
-          ...current,
-          optionValues: exists
-            ? current.optionValues.filter((v) => v !== value)
-            : [...current.optionValues, value],
-        },
-      };
+      const cur = prev[key] ?? { optionValues: [], answerText: "" };
+      const exists = cur.optionValues.includes(value);
+      return { ...prev, [key]: { ...cur, optionValues: exists ? cur.optionValues.filter((v) => v !== value) : [...cur.optionValues, value] } };
     });
   };
 
-  const setSingle = (questionKey: string, value: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionKey]: {
-        ...(prev[questionKey] ?? { answerText: "", optionValues: [] }),
-        optionValues: [value],
-      },
-    }));
+  const setText = (key: string, value: string) => {
+    setAnswers((prev) => ({ ...prev, [key]: { ...(prev[key] ?? { optionValues: [], answerText: "" }), answerText: value } }));
   };
 
-  const setText = (questionKey: string, value: string) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionKey]: {
-        ...(prev[questionKey] ?? { answerText: "", optionValues: [] }),
-        answerText: value,
-      },
-    }));
-  };
+  // Only show the two main multi-choice questions inline (allergies + diet)
+  // Free-text children shown as compact inputs below each parent
+  const mainQuestions = useMemo(
+    () => questions.filter((q) => q.type !== "FREE_TEXT" || !questions.some((p) => q.key.startsWith(p.key + "_"))),
+    [questions]
+  );
 
-  const onSaveAndContinue = async () => {
-    if (requiredInvalid) {
-      setResult("Please complete required questions.");
-      return;
-    }
-
+  const onSave = async () => {
     setSaving(true);
-    setResult("");
-
+    setError("");
     try {
-      const answersPayload: OnboardingAnswerInput[] = questions
+      const payload: OnboardingAnswerInput[] = questions
         .map((q) => {
           const a = answers[q.key] ?? { optionValues: [], answerText: "" };
-          if (q.type === "FREE_TEXT") {
-            return { questionKey: q.key, answerText: a.answerText.trim() };
-          }
+          if (q.type === "FREE_TEXT") return { questionKey: q.key, answerText: a.answerText.trim() };
           return { questionKey: q.key, optionValues: a.optionValues };
         })
-        .filter((item) => {
-          if ("optionValues" in item) return Boolean(item.optionValues?.length);
-          return Boolean(item.answerText?.trim());
-      });
+        .filter((item) => ("optionValues" in item ? (item.optionValues?.length ?? 0) > 0 : Boolean(item.answerText?.trim())));
 
-      await saveAnswers(token, answersPayload);
-
+      await saveAnswers(token, payload);
       await completeOnboarding(token);
-
-      setResult("Onboarding completed.");
       onCompleted();
-    } catch (error) {
-      setResult(`Failed to save answers: ${String((error as Error).message || error)}`);
+    } catch (e) {
+      setError(String((e as Error).message || "Failed to save."));
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return <main className="ig-screen"><div className="ig-page-note">Loading onboarding...</div></main>;
-  }
+  if (loading) return <p style={{ color: "var(--muted)", fontSize: "13px" }}>Loading questions…</p>;
 
   return (
-    <main className="ig-screen">
-      <section className="ig-page-shell ig-onboarding-shell">
-        <header className="ig-page-header">
-          <h1>Tell us about your eating habits</h1>
-          <p>Answer the questions below. Required items are marked with *.</p>
-        </header>
+    <div>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+        <div>
+          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>
+            Step 1 of 2
+          </p>
+          <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "2px 0 0", letterSpacing: "-0.3px" }}>
+            Your preferences
+          </h3>
+        </div>
+      </div>
 
-        {groupedQuestions.parentQuestions.map((q) => {
+      <div style={{ display: "grid", gap: "16px", maxHeight: "60vh", overflowY: "auto", paddingRight: "4px" }}>
+        {mainQuestions.map((q) => {
           const a = answers[q.key] ?? { optionValues: [], answerText: "" };
-          const childQuestions = groupedQuestions.childrenByParent.get(q.key) ?? [];
           return (
-            <section key={q.id} className="ig-card ig-onboard-card">
-              <h2 className="ig-onboard-title">
-                {q.label} {q.isRequired ? "*" : ""}
-              </h2>
+            <div key={q.id}>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink-secondary)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                {q.label}
+              </p>
 
-              {q.type === "FREE_TEXT" ? (
+              {q.type === "FREE_TEXT" && (
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={a.answerText}
                   onChange={(e) => setText(q.key, e.target.value)}
-                  className="ig-onboard-textarea"
                   placeholder="Type your answer"
+                  style={{ width: "100%", fontSize: "13px", resize: "none" }}
                 />
-              ) : null}
+              )}
 
-              {q.type === "SINGLE_CHOICE" ? (
-                <div className="ig-onboard-options">
-                  {q.options.map((opt) => (
-                    <label key={opt.id} className="ig-onboard-option">
-                      <input
-                        type="radio"
-                        name={`q-${q.key}`}
-                        checked={a.optionValues[0] === opt.value}
-                        onChange={() => setSingle(q.key, opt.value)}
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  ))}
+              {(q.type === "MULTI_CHOICE" || q.type === "SINGLE_CHOICE") && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {q.options.map((opt) => {
+                    const selected = a.optionValues.includes(opt.value);
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => toggleMulti(q.key, opt.value)}
+                        style={{
+                          padding: "5px 12px",
+                          borderRadius: "999px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          border: selected ? "1.5px solid #dc2743" : "1.5px solid var(--line)",
+                          background: selected ? "#fff0f3" : "var(--panel)",
+                          color: selected ? "#dc2743" : "var(--ink-secondary)",
+                          transition: "all 0.15s",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : null}
-
-              {q.type === "MULTI_CHOICE" ? (
-                <div className="ig-onboard-options">
-                  {q.options.map((opt) => (
-                    <label key={opt.id} className="ig-onboard-option">
-                      <input
-                        type="checkbox"
-                        checked={a.optionValues.includes(opt.value)}
-                        onChange={() => toggleMulti(q.key, opt.value)}
-                      />
-                      <span>{opt.label}</span>
-                    </label>
-                  ))}
-                </div>
-              ) : null}
-
-              {childQuestions.map((child) => {
-                const childAnswer = answers[child.key] ?? { optionValues: [], answerText: "" };
-                return (
-                  <div key={child.id} className="ig-onboard-child">
-                    <label className="ig-onboard-child-label">
-                      {child.label} {child.isRequired ? "*" : ""}
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={childAnswer.answerText}
-                      onChange={(e) => setText(child.key, e.target.value)}
-                      className="ig-onboard-textarea"
-                      placeholder="Type your answer"
-                    />
-                  </div>
-                );
-              })}
-            </section>
+              )}
+            </div>
           );
         })}
+      </div>
 
-        <div className="ig-page-actions">
-          <button className="btn-primary" onClick={onSaveAndContinue} disabled={saving}>
-            {saving ? "Saving..." : "Save and continue"}
-          </button>
-        </div>
+      {error && <p style={{ fontSize: "12px", color: "var(--error)", marginTop: "10px" }}>{error}</p>}
 
-        <pre className="ig-page-result">
-          {result || "Your answers will be saved to your profile."}
-        </pre>
-      </section>
-    </main>
+      <button 
+        className="btn-secondary"
+        onClick={onBack} >
+          ← Back
+      </button>
+      
+      <button
+        className="btn-primary"
+        onClick={onSave}
+        disabled={saving}
+      >
+        {saving ? "Saving…" : "Next →"}
+      </button>
+    </div>
   );
 }
-

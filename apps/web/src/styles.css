@@ -111,43 +111,87 @@ input::placeholder {
 /* ─── Instagram-style primary button ─────────────────────────────────────── */
 
 .btn-primary {
+  --ig-btn-accent: #dc2743;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  /* border-radius: 10px; */
   background: transparent;
-  color: #dc2743;
-  font-weight: 600;
-  font-size: 14px;
-  border: 1px solid #dc2743;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #fff0f3;
-  color: #bc1888;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border-radius: var(--radius-sm);
-  background: var(--line-light);
-  color: var(--ink-secondary);
+  color: var(--ig-btn-accent);
   font-weight: 600;
   font-size: 14px;
   border: none;
   cursor: pointer;
-  transition: background 0.15s ease;
+  position: relative;
+  isolation: isolate;
+  transform: translateY(0);
+  transition: color 0.2s ease, transform 0.2s ease, opacity 0.15s ease;
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 2px;
+  height: 2px;
+  /* border-radius: 99px; */
+  background: var(--ig-btn-accent);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-3px);
+  animation: ig-btn-jump 0.3s ease;
+}
+
+.btn-secondary {
+  --ig-btn-accent: #d8d2d3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    /* border-radius: 10px; */
+    background: transparent;
+    color: #8a8989;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    isolation: isolate;
+    transform: translateY(0);
+    transition: color 0.2s ease, transform 0.2s ease, opacity 0.15s ease;
+}
+
+.btn-secondary::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 99px;
+  background: var(--ig-btn-accent);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--line);
+  transform: translateY(-3px);
+  animation: ig-btn-jump 0.3s ease;
+}
+
+@keyframes ig-btn-jump {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(-3px);
+  }
 }
 
 /* ─── Page shell ──────────────────────────────────────────────────────────── */
@@ -871,7 +915,7 @@ input::placeholder {
   min-height: 100vh;
   background: var(--page-bg);
   display: grid;
-  grid-template-columns: 10% 90%;
+  grid-template-columns: 12% 88%;
 }
 
 .ig-left-rail {
@@ -886,7 +930,7 @@ input::placeholder {
   /* border-right: 1px solid #dbdbdb; */
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   /* justify-content: center; */
   gap: 24px;
   padding: 40px 20px;
@@ -915,6 +959,7 @@ input::placeholder {
     letter-spacing: 1px;
     font-weight: 400;
     display: inline-block;
+    text-align: center;
 }
 
 .ig-left-nav {
@@ -952,7 +997,7 @@ input::placeholder {
 
 .ig-left-rail:hover .ig-left-text {
   opacity: 1;
-  max-width: 140px;
+  max-width: 80px;
   text-align: left;
 }
 
@@ -976,7 +1021,7 @@ input::placeholder {
   margin: 0;
   padding: 40px 0 24px 0;
   display: grid;
-  grid-template-columns: 60% 30%;
+  grid-template-columns: 60% 28%;
   gap: 64px;
   align-items: start;
 }
@@ -1001,7 +1046,7 @@ input::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 15px;
   /* border: 1px solid #dbdbdb; */
   border-radius: 12px;
   background: #fff;
@@ -1115,6 +1160,9 @@ input::placeholder {
 
 .ig-right-col {
   position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
   align-self: start;
   display: grid;
   gap: 16px;
@@ -1255,6 +1303,8 @@ input::placeholder {
 
   .ig-right-col {
     position: static;
+    height: auto;
+    overflow: visible;
   }
 }
 
@@ -1340,8 +1390,8 @@ input::placeholder {
 }
 
 .ig-card {
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  /* border: 1px solid var(--line);
+  border-radius: 12px; */
   background: #fff;
 }
 
@@ -1379,10 +1429,10 @@ input::placeholder {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  /* border: 1px solid var(--line); */
+  /* border-radius: 12px; */
   background: #fff;
 }
 
@@ -1401,12 +1451,14 @@ input::placeholder {
 .ig-toolbar-title {
   margin: 0;
   font-size: 22px;
+  font-weight: normal;
+  letter-spacing: 3px;
 }
 
 .ig-toolbar-subtitle {
   margin: 2px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .ig-alert {
@@ -1428,6 +1480,16 @@ input::placeholder {
 
 .ig-pantry-content {
   overflow: hidden;
+}
+
+.ig-pantry-embedded {
+  display: grid;
+  gap: 16px;
+}
+
+.ig-recipes-embedded {
+  display: grid;
+  gap: 16px;
 }
 
 .ig-onboarding-shell {
@@ -1522,7 +1584,7 @@ input::placeholder {
 
 .ig-recipe-card {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 5px;
   overflow: hidden;
   background: #fff;
 }
@@ -1536,6 +1598,16 @@ input::placeholder {
 
 .ig-recipe-card-body {
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ig-recipe-card-body-content {
+  flex: 1;
+}
+
+.ig-recipe-card-body-footer {
+  margin-top: auto;
 }
 
 .ig-recipe-card-body h3 {
@@ -1548,6 +1620,7 @@ input::placeholder {
   font-size: 13px;
   color: var(--muted);
 }
+
 
 .ig-recipe-expire {
   color: #e65100 !important;
@@ -1852,4 +1925,33 @@ input::placeholder {
   border-radius: 6px;
   padding: 2px;
   font-size: 14px;
+}
+/* ─── Right panel slide+fade transitions ─────────────────────────────────── */
+
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes panelSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+}
+
+.ig-right-panel-enter {
+  animation: panelSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

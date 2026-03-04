@@ -75,8 +75,8 @@ export function SignUpPage({
           <div className="auth-actions">
             <button className="btn-primary" onClick={onSignUp}>Create account</button>
             <button className="btn-primary" onClick={onConfirm}>Confirm code</button>
-            <button className="btn-secondary" onClick={onResend}>Resend code</button>
-            <button className="btn-secondary" onClick={onGoLogin}>Have account? Login</button>
+            <button className="btn-primary" onClick={onResend}>Resend code</button>
+            <button className="btn-primary" onClick={onGoLogin}>Have account? Login</button>
           </div>
           <pre className="auth-result">{result || " "}</pre>
         </section>
@@ -84,3 +84,4 @@ export function SignUpPage({
     </main>
   );
 }
+

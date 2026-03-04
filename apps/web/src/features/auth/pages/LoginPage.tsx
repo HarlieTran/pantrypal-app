@@ -43,7 +43,7 @@ export function LoginPage({
           </div>
           <div className="auth-actions">
             <button className="btn-primary" onClick={onLogin}>Login</button>
-            <button className="btn-secondary" onClick={onGoSignUp}>No account? Sign up</button>
+            <button className="btn-primary" onClick={onGoSignUp}>No account? Sign up</button>
           </div>
           <pre className="auth-result">{result || " "}</pre>
         </section>
@@ -51,3 +51,4 @@ export function LoginPage({
     </main>
   );
 }
+

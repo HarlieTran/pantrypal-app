@@ -47,7 +47,7 @@ export function RecipeDetailsModal({
         {!loading && error ? (
           <div className="ig-modal-error-wrap">
             <p className="ig-error-note">{error}</p>
-            <button className="btn-secondary" onClick={onRetry}>Retry</button>
+            <button className="btn-primary" onClick={onRetry}>Retry</button>
           </div>
         ) : null}
 
@@ -112,7 +112,7 @@ export function RecipeDetailsModal({
             )}
 
             <div className="ig-modal-actions">
-              <button className="btn-secondary" onClick={onCookPreview} disabled={loading || cooking}>
+              <button className="btn-primary" onClick={onCookPreview} disabled={loading || cooking}>
                 {cookPreview ? "Refresh Cook Preview" : "Cook This Recipe"}
               </button>
               {cookPreview ? (
@@ -143,3 +143,4 @@ export function RecipeDetailsModal({
     </div>
   );
 }
+

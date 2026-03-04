@@ -114,7 +114,7 @@ export function AddItemModal({ onAdd, onClose }: Props) {
         {error ? <p className="ig-error-note">{error}</p> : null}
 
         <div className="ig-modal-actions">
-          <button className="btn-secondary" onClick={onClose} disabled={loading}>Cancel</button>
+          <button className="btn-primary" onClick={onClose} disabled={loading}>Cancel</button>
           <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
             {loading ? "Adding..." : "Add Item"}
           </button>
@@ -123,3 +123,4 @@ export function AddItemModal({ onAdd, onClose }: Props) {
     </div>
   );
 }
+

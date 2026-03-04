@@ -1,5 +1,6 @@
 import { HomeHero } from "../components/HomeHero";
 import type { HomeSpecial, PreferenceProfile } from "../types";
+import type { RightPanel } from "../../../app/App";
 
 type ExpiringPreviewItem = {
   name: string;
@@ -9,6 +10,7 @@ type ExpiringPreviewItem = {
 };
 
 type HomePageProps = {
+  centerView: "home" | "pantry" | "recipes";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;
@@ -19,46 +21,44 @@ type HomePageProps = {
   avatarLabel: string;
   expiringItems: ExpiringPreviewItem[];
   preferenceProfile: PreferenceProfile | null;
-  result: string;
+  rightPanel: RightPanel;
+  authError: string;
+  authLoading: boolean;
+  email: string;
+  password: string;
+  givenName: string;
+  familyName: string;
+  code: string;
+  token: string;
+  onboardingCompleted: boolean;
+  onEmailChange: (v: string) => void;
+  onPasswordChange: (v: string) => void;
+  onGivenNameChange: (v: string) => void;
+  onFamilyNameChange: (v: string) => void;
+  onCodeChange: (v: string) => void;
   onHome: () => void;
   onLogout: () => void;
   onLoginNavigate: () => void;
+  onSignUpNavigate: () => void;
   onPantryNavigate: () => void;
+  onLogin: () => void;
+  onSignUp: () => void;
+  onConfirm: () => void;
+  onResend: () => void;
+  onRecipesNavigate: () => void;
+  onRightPanelChange: (panel: RightPanel) => void;
+  onOnboardingComplete: () => void;
+  onPicksComplete: (payload: { selectedImageIds: string[]; rejectedImageIds: string[] }) => Promise<void>;
+  onRequestMorePicks: () => void;
 };
 
-export function HomePage({
-  heroImageSrc,
-  special,
-  homeLoading,
-  homeError,
-  isLoggedIn,
-  accountId,
-  displayName,
-  avatarLabel,
-  expiringItems,
-  preferenceProfile: _preferenceProfile,
-  result: _result,
-  onHome,
-  onLogout,
-  onLoginNavigate,
-  onPantryNavigate,
-}: HomePageProps) {
+
+export function HomePage(props: HomePageProps)
+{
   return (
     <main className="page-shell">
       <HomeHero
-        heroImageSrc={heroImageSrc}
-        special={special}
-        homeLoading={homeLoading}
-        homeError={homeError}
-        isLoggedIn={isLoggedIn}
-        accountId={accountId}
-        displayName={displayName}
-        avatarLabel={avatarLabel}
-        expiringItems={expiringItems}
-        onHome={onHome}
-        onLogout={onLogout}
-        onLoginNavigate={onLoginNavigate}
-        onPantryNavigate={onPantryNavigate}
+        {...props}
       />
     </main>
   );

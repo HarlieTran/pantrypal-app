@@ -229,7 +229,7 @@ export function ImageUploadParser({ token, onComplete, onClose }: Props) {
 
             <div className="ig-modal-actions">
               <button
-                className="btn-secondary"
+                className="btn-primary"
                 onClick={() => {
                   setStep("pick");
                   setFile(null);
@@ -312,7 +312,7 @@ export function ImageUploadParser({ token, onComplete, onClose }: Props) {
             {error ? <p className="ig-error-note">{error}</p> : null}
 
             <div className="ig-modal-actions">
-              <button className="btn-secondary" onClick={onClose} disabled={step === "saving"}>Cancel</button>
+              <button className="btn-primary" onClick={onClose} disabled={step === "saving"}>Cancel</button>
               <button className="btn-primary" onClick={handleConfirm} disabled={step === "saving" || selectedCount === 0}>
                 {step === "saving" ? "Saving..." : `Add ${selectedCount} item${selectedCount !== 1 ? "s" : ""}`}
               </button>
@@ -323,3 +323,4 @@ export function ImageUploadParser({ token, onComplete, onClose }: Props) {
     </div>
   );
 }
+

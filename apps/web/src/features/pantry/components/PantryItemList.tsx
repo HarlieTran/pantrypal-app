@@ -68,7 +68,7 @@ function PantryItemRow({
       alignItems: "center",
       gap: "12px",
       padding: "10px 16px",
-      borderBottom: "1px solid var(--line)",
+      borderTop: "1px solid var(--line)",
       backgroundColor:
         item.expiryStatus === "expired"
           ? "rgba(183,28,28,0.03)"
@@ -173,7 +173,7 @@ function CategoryBlock({
   return (
     <div style={{
       border: "1px solid var(--line)",
-      borderRadius: "14px",
+      borderRadius: "5px",
       overflow: "hidden",
       background: "var(--panel)",
     }}>

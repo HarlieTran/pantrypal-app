@@ -14,11 +14,12 @@ interface Props {
   token: string;
   onBack: () => void;
   onGenerateRecipes: () => void;
+  embedded?: boolean;
 }
 
 type Modal = "none" | "add" | "upload";
 
-export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
+export function PantryPage({ token, onBack, onGenerateRecipes, embedded = false }: Props) {
   const [items, setItems] = useState<PantryItem[]>([]);
   const [meta, setMeta] = useState<PantryMeta | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,13 +81,12 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
   const expiredCount = items.filter((i) => i.expiryStatus === "expired").length;
   const expiringSoonCount = items.filter((i) => i.expiryStatus === "expiring_soon").length;
 
-  return (
-    <main className="ig-screen">
-      <section className="ig-page-shell ig-pantry-shell">
+  const content = (
+    <>
         <header className="ig-toolbar">
           <div className="ig-toolbar-left">
-            <button className="btn-secondary" onClick={onBack}>Back</button>
             <div>
+              <p><i>Hello, </i></p>
               <h1 className="ig-toolbar-title">My Pantry</h1>
               {meta ? (
                 <p className="ig-toolbar-subtitle">
@@ -98,8 +98,8 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
           </div>
 
           <div className="ig-toolbar-actions">
-            <button className="btn-secondary" onClick={onGenerateRecipes} title="Generate recipes from pantry">Recipes</button>
-            <button className="btn-secondary" onClick={() => setModal("upload")} title="Upload image">Upload</button>
+            {/* <button className="btn-primary" onClick={onGenerateRecipes} title="Generate recipes from pantry">Recipes</button> */}
+            <button className="btn-primary" onClick={() => setModal("upload")} title="Upload image">Upload</button>
             <button className="btn-primary" onClick={() => setModal("add")} title="Add item">+ Add</button>
           </div>
         </header>
@@ -124,7 +124,19 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
         {modal === "upload" ? (
           <ImageUploadParser token={token} onComplete={loadPantry} onClose={() => setModal("none")} />
         ) : null}
+    </>
+  );
+
+  if (embedded) {
+    return <section className="ig-pantry-embedded">{content}</section>;
+  }
+
+  return (
+    <main className="ig-screen">
+      <section className="ig-page-shell ig-pantry-shell">
+        {content}
       </section>
     </main>
   );
 }
+
