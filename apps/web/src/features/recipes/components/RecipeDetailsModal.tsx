@@ -38,177 +38,107 @@ export function RecipeDetailsModal({
   if (!open) return null;
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.55)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1200,
-        padding: 20,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "100%",
-          maxWidth: 760,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          background: "var(--panel)",
-          borderRadius: 16,
-          border: "1px solid var(--line)",
-          padding: 20,
-          position: "relative",
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            right: 12,
-            top: 10,
-            border: "none",
-            background: "transparent",
-            fontSize: 20,
-            cursor: "pointer",
-            color: "var(--muted)",
-          }}
-        >
-          x
-        </button>
+    <div onClick={onClose} className="ig-modal-backdrop">
+      <div onClick={(e) => e.stopPropagation()} className="ig-modal-card ig-recipe-modal">
+        <button className="ig-modal-close" onClick={onClose} aria-label="Close recipe details">x</button>
 
-        {loading && <p style={{ color: "var(--muted)" }}>Loading recipe details...</p>}
+        {loading ? <p className="ig-page-note">Loading recipe details...</p> : null}
 
-        {!loading && error && (
-          <div>
-            <p style={{ color: "#b71c1c" }}>{error}</p>
-            <button onClick={onRetry}>Retry</button>
+        {!loading && error ? (
+          <div className="ig-modal-error-wrap">
+            <p className="ig-error-note">{error}</p>
+            <button className="btn-secondary" onClick={onRetry}>Retry</button>
           </div>
-        )}
+        ) : null}
 
-        {!loading && !error && recipe && (
+        {!loading && !error && recipe ? (
           <>
-            <h2 style={{ marginTop: 0 }}>{recipe.title}</h2>
+            <h2 className="ig-modal-title">{recipe.title}</h2>
 
-            {recipe.image && (
-              <img
-                src={recipe.image}
-                alt={recipe.title}
-                style={{ width: "100%", borderRadius: 12, marginBottom: 12 }}
-              />
-            )}
+            {recipe.image ? (
+              <img src={recipe.image} alt={recipe.title} className="ig-recipe-modal-image" />
+            ) : null}
 
-            <p style={{ color: "var(--muted)", marginTop: 0 }}>
-              {recipe.readyInMinutes} min · {recipe.servings} servings
+            <p className="ig-modal-subtitle">
+              {recipe.readyInMinutes} min - {recipe.servings} servings
             </p>
 
-            {recipe.summary && <p>{stripHtml(recipe.summary)}</p>}
+            {recipe.summary ? <p className="ig-modal-body-text">{stripHtml(recipe.summary)}</p> : null}
 
-            <h3>Pantry Match</h3>
-            <div style={{ marginBottom: 12 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, color: "#2e7d32" }}>
-                Matched items
-              </p>
+            <h3 className="ig-modal-section-title">Pantry Match</h3>
+
+            <div className="ig-chip-group-wrap">
+              <p className="ig-chip-title matched">Matched items</p>
               {matchedIngredients.length === 0 ? (
-                <p style={{ margin: 0, color: "var(--muted)" }}>No matched pantry items.</p>
+                <p className="ig-page-note">No matched pantry items.</p>
               ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div className="ig-chip-group">
                   {matchedIngredients.map((name, idx) => (
-                    <span
-                      key={`matched-${idx}-${name}`}
-                      style={{
-                        fontSize: 12,
-                        padding: "3px 8px",
-                        borderRadius: 999,
-                        background: "#e8f5e9",
-                        color: "#2e7d32",
-                      }}
-                    >
-                      {name}
-                    </span>
+                    <span key={`matched-${idx}-${name}`} className="ig-chip matched">{name}</span>
                   ))}
                 </div>
               )}
             </div>
 
-            <div style={{ marginBottom: 12 }}>
-              <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, color: "#b71c1c" }}>
-                Missing items
-              </p>
+            <div className="ig-chip-group-wrap">
+              <p className="ig-chip-title missing">Missing items</p>
               {missingIngredients.length === 0 ? (
-                <p style={{ margin: 0, color: "var(--muted)" }}>No missing ingredients.</p>
+                <p className="ig-page-note">No missing ingredients.</p>
               ) : (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div className="ig-chip-group">
                   {missingIngredients.map((name, idx) => (
-                    <span
-                      key={`missing-${idx}-${name}`}
-                      style={{
-                        fontSize: 12,
-                        padding: "3px 8px",
-                        borderRadius: 999,
-                        background: "#ffebee",
-                        color: "#b71c1c",
-                      }}
-                    >
-                      {name}
-                    </span>
+                    <span key={`missing-${idx}-${name}`} className="ig-chip missing">{name}</span>
                   ))}
                 </div>
               )}
             </div>
 
-            <h3>Ingredients</h3>
-            <ul>
+            <h3 className="ig-modal-section-title">Ingredients</h3>
+            <ul className="ig-modal-list">
               {recipe.ingredients.map((x, i) => (
                 <li key={`${x}-${i}`}>{x}</li>
               ))}
             </ul>
 
-            <h3>Steps</h3>
+            <h3 className="ig-modal-section-title">Steps</h3>
             {recipe.steps.length === 0 ? (
-              <p style={{ color: "var(--muted)" }}>No instructions provided.</p>
+              <p className="ig-page-note">No instructions provided.</p>
             ) : (
-              <ol>
+              <ol className="ig-modal-list">
                 {recipe.steps.map((s, i) => (
-                  <li key={`${s}-${i}`} style={{ marginBottom: 8 }}>
-                    {s}
-                  </li>
+                  <li key={`${s}-${i}`}>{s}</li>
                 ))}
               </ol>
             )}
 
-            <div style={{ display: "flex", gap: 8, marginTop: 12, marginBottom: 10 }}>
-              <button onClick={onCookPreview} disabled={loading || cooking}>
+            <div className="ig-modal-actions">
+              <button className="btn-secondary" onClick={onCookPreview} disabled={loading || cooking}>
                 {cookPreview ? "Refresh Cook Preview" : "Cook This Recipe"}
               </button>
-              {cookPreview && (
-                <button onClick={onCookConfirm} disabled={cooking}>
+              {cookPreview ? (
+                <button className="btn-primary" onClick={onCookConfirm} disabled={cooking}>
                   {cooking ? "Applying..." : "Confirm Cook"}
                 </button>
-              )}
+              ) : null}
             </div>
 
-            {cookError && <p style={{ color: "#b71c1c", marginTop: 0 }}>{cookError}</p>}
+            {cookError ? <p className="ig-error-note">{cookError}</p> : null}
 
-            {cookPreview && (
-              <div style={{ marginBottom: 12, fontSize: 13, color: "var(--muted)" }}>
-                <p style={{ margin: "4px 0" }}>Will update: {cookPreview.updatedItems.length} item(s)</p>
-                <p style={{ margin: "4px 0" }}>Will remove: {cookPreview.removedItems.length} item(s)</p>
-                <p style={{ margin: "4px 0" }}>Unmatched: {cookPreview.unmatchedIngredients.length}</p>
+            {cookPreview ? (
+              <div className="ig-modal-summary">
+                <p>Will update: {cookPreview.updatedItems.length} item(s)</p>
+                <p>Will remove: {cookPreview.removedItems.length} item(s)</p>
+                <p>Unmatched: {cookPreview.unmatchedIngredients.length}</p>
               </div>
-            )}
+            ) : null}
 
-            {recipe.sourceUrl && (
-              <a href={recipe.sourceUrl} target="_blank" rel="noreferrer">
+            {recipe.sourceUrl ? (
+              <a href={recipe.sourceUrl} target="_blank" rel="noreferrer" className="ig-plain-link">
                 View source
               </a>
-            )}
+            ) : null}
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );

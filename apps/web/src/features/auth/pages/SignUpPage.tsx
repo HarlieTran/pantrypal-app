@@ -25,7 +25,7 @@ export function SignUpPage({
   familyName,
   code,
   result,
-  heroImageSrc,
+  heroImageSrc: _heroImageSrc,
   onEmailChange,
   onPasswordChange,
   onGivenNameChange,
@@ -38,7 +38,7 @@ export function SignUpPage({
   onBackHome,
 }: SignUpPageProps) {
   return (
-    <main className="auth-page" style={{ backgroundImage: `url(${heroImageSrc})` }}>
+    <main className="auth-page">
       <div className="auth-overlay">
         <header className="auth-nav">
           <div className="logo">PANTRYPAL</div>
@@ -73,10 +73,10 @@ export function SignUpPage({
             />
           </div>
           <div className="auth-actions">
-            <button onClick={onSignUp}>Create account</button>
-            <button onClick={onConfirm}>Confirm code</button>
-            <button onClick={onResend}>Resend code</button>
-            <button onClick={onGoLogin}>Have account? Login</button>
+            <button className="btn-primary" onClick={onSignUp}>Create account</button>
+            <button className="btn-primary" onClick={onConfirm}>Confirm code</button>
+            <button className="btn-secondary" onClick={onResend}>Resend code</button>
+            <button className="btn-secondary" onClick={onGoLogin}>Have account? Login</button>
           </div>
           <pre className="auth-result">{result || " "}</pre>
         </section>

@@ -77,65 +77,49 @@ export function RecipePreferencePicker({ onSubmitSelection }: Props) {
   };
 
   if (loading) {
-    return <main style={{ padding: 24, fontFamily: "system-ui" }}>Loading recipe images...</main>;
+    return <main className="ig-screen"><div className="ig-page-note">Loading recipe images...</div></main>;
   }
 
   return (
-    <main style={{ padding: 24, maxWidth: 1000, margin: "0 auto", fontFamily: "system-ui" }}>
-      <h1>Pick your favorite recipes</h1>
-      <p>Select the recipes you would most likely cook or eat.</p>
+    <main className="ig-screen">
+      <section className="ig-page-shell ig-onboarding-shell">
+        <header className="ig-page-header">
+          <h1>Pick your favorite recipes</h1>
+          <p>Select the recipes you would most likely cook or eat.</p>
+        </header>
 
-      <div
-        style={{
-          marginTop: 16,
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-          gap: 12,
-        }}
-      >
-        {images.map((img) => {
-          const active = selectedIds.includes(img.id);
-          return (
-            <button
-              key={img.id}
-              type="button"
-              onClick={() => toggleSelect(img.id)}
-              style={{
-                border: active ? "3px solid #0d6efd" : "1px solid #ddd",
-                borderRadius: 10,
-                padding: 8,
-                textAlign: "left",
-                background: "#fff",
-                cursor: "pointer",
-              }}
-            >
-              <img
-                src={img.imageUrl}
-                alt={img.title}
-                style={{ width: "100%", height: 140, objectFit: "cover", borderRadius: 8 }}
-              />
-              <div style={{ marginTop: 8, fontWeight: 600 }}>{img.title}</div>
-              <div style={{ fontSize: 13, color: "#555" }}>{img.cuisine ?? "Unknown cuisine"}</div>
-              <div style={{ marginTop: 6, fontSize: 12 }}>
-                {active ? "Selected" : "Tap to select"}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+        <div className="ig-recipe-picker-grid">
+          {images.map((img) => {
+            const active = selectedIds.includes(img.id);
+            return (
+              <button
+                key={img.id}
+                type="button"
+                onClick={() => toggleSelect(img.id)}
+                className={`ig-recipe-pick-card${active ? " is-active" : ""}`}
+              >
+                <img src={img.imageUrl} alt={img.title} className="ig-recipe-pick-image" />
+                <div className="ig-recipe-pick-title">{img.title}</div>
+                <div className="ig-recipe-pick-cuisine">{img.cuisine ?? "Unknown cuisine"}</div>
+                <div className="ig-recipe-pick-state">{active ? "Selected" : "Tap to select"}</div>
+              </button>
+            );
+          })}
+        </div>
 
-      <div style={{ marginTop: 16 }}>
-        <p>
-          Selected: <strong>{selectedIds.length}</strong> / {images.length}
-        </p>
-        <button onClick={onContinue} disabled={saving || !canSubmit}>
-          {saving ? "Submitting..." : "Continue"}
-        </button>
-      </div>
+        <div className="ig-page-actions ig-picker-actions">
+          <p>
+            Selected: <strong>{selectedIds.length}</strong> / {images.length}
+          </p>
+          <button className="btn-primary" onClick={onContinue} disabled={saving || !canSubmit}>
+            {saving ? "Submitting..." : "Continue"}
+          </button>
+        </div>
 
-      <pre style={{ background: "#f6f6f6", padding: 12, borderRadius: 8, marginTop: 16 }}>
-        {result || "Select at least 2 images and continue."}
-      </pre>
+        <pre className="ig-page-result">
+          {result || "Select at least 2 images and continue."}
+        </pre>
+      </section>
     </main>
   );
 }

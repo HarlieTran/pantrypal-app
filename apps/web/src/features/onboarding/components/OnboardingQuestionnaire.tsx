@@ -160,97 +160,98 @@ export function OnboardingQuestionnaire({ token, onCompleted }: Props) {
   };
 
   if (loading) {
-    return <main style={{ fontFamily: "system-ui", padding: 24 }}>Loading onboarding...</main>;
+    return <main className="ig-screen"><div className="ig-page-note">Loading onboarding...</div></main>;
   }
 
   return (
-    <main style={{ fontFamily: "system-ui", padding: 24, maxWidth: 900, margin: "0 auto" }}>
-      <h1>Tell us about your eating habits</h1>
-      <p>Answer the questions below. Required items are marked with *.</p>
+    <main className="ig-screen">
+      <section className="ig-page-shell ig-onboarding-shell">
+        <header className="ig-page-header">
+          <h1>Tell us about your eating habits</h1>
+          <p>Answer the questions below. Required items are marked with *.</p>
+        </header>
 
-      {groupedQuestions.parentQuestions.map((q) => {
-        const a = answers[q.key] ?? { optionValues: [], answerText: "" };
-        const childQuestions = groupedQuestions.childrenByParent.get(q.key) ?? [];
-        return (
-          <section
-            key={q.id}
-            style={{ marginTop: 20, border: "1px solid #ddd", borderRadius: 8, padding: 12 }}
-          >
-            <h2 style={{ margin: 0 }}>
-              {q.label} {q.isRequired ? "*" : ""}
-            </h2>
+        {groupedQuestions.parentQuestions.map((q) => {
+          const a = answers[q.key] ?? { optionValues: [], answerText: "" };
+          const childQuestions = groupedQuestions.childrenByParent.get(q.key) ?? [];
+          return (
+            <section key={q.id} className="ig-card ig-onboard-card">
+              <h2 className="ig-onboard-title">
+                {q.label} {q.isRequired ? "*" : ""}
+              </h2>
 
-            {q.type === "FREE_TEXT" ? (
-              <textarea
-                rows={3}
-                value={a.answerText}
-                onChange={(e) => setText(q.key, e.target.value)}
-                style={{ width: "100%", marginTop: 8 }}
-                placeholder="Type your answer"
-              />
-            ) : null}
+              {q.type === "FREE_TEXT" ? (
+                <textarea
+                  rows={3}
+                  value={a.answerText}
+                  onChange={(e) => setText(q.key, e.target.value)}
+                  className="ig-onboard-textarea"
+                  placeholder="Type your answer"
+                />
+              ) : null}
 
-            {q.type === "SINGLE_CHOICE" ? (
-              <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
-                {q.options.map((opt) => (
-                  <label key={opt.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="radio"
-                      name={`q-${q.key}`}
-                      checked={a.optionValues[0] === opt.value}
-                      onChange={() => setSingle(q.key, opt.value)}
-                    />
-                    <span>{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            ) : null}
-
-            {q.type === "MULTI_CHOICE" ? (
-              <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
-                {q.options.map((opt) => (
-                  <label key={opt.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <input
-                      type="checkbox"
-                      checked={a.optionValues.includes(opt.value)}
-                      onChange={() => toggleMulti(q.key, opt.value)}
-                    />
-                    <span>{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            ) : null}
-
-            {childQuestions.map((child) => {
-              const childAnswer = answers[child.key] ?? { optionValues: [], answerText: "" };
-              return (
-                <div key={child.id} style={{ marginTop: 12 }}>
-                  <label style={{ display: "block", fontWeight: 600 }}>
-                    {child.label} {child.isRequired ? "*" : ""}
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={childAnswer.answerText}
-                    onChange={(e) => setText(child.key, e.target.value)}
-                    style={{ width: "100%", marginTop: 6 }}
-                    placeholder="Type your answer"
-                  />
+              {q.type === "SINGLE_CHOICE" ? (
+                <div className="ig-onboard-options">
+                  {q.options.map((opt) => (
+                    <label key={opt.id} className="ig-onboard-option">
+                      <input
+                        type="radio"
+                        name={`q-${q.key}`}
+                        checked={a.optionValues[0] === opt.value}
+                        onChange={() => setSingle(q.key, opt.value)}
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
                 </div>
-              );
-            })}
-          </section>
-        );
-      })}
+              ) : null}
 
-      <div style={{ marginTop: 16 }}>
-        <button onClick={onSaveAndContinue} disabled={saving}>
-          {saving ? "Saving..." : "Save and continue"}
-        </button>
-      </div>
+              {q.type === "MULTI_CHOICE" ? (
+                <div className="ig-onboard-options">
+                  {q.options.map((opt) => (
+                    <label key={opt.id} className="ig-onboard-option">
+                      <input
+                        type="checkbox"
+                        checked={a.optionValues.includes(opt.value)}
+                        onChange={() => toggleMulti(q.key, opt.value)}
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
 
-      <pre style={{ background: "#f6f6f6", padding: 12, borderRadius: 8, marginTop: 16 }}>
-        {result || "Your answers will be saved to your profile."}
-      </pre>
+              {childQuestions.map((child) => {
+                const childAnswer = answers[child.key] ?? { optionValues: [], answerText: "" };
+                return (
+                  <div key={child.id} className="ig-onboard-child">
+                    <label className="ig-onboard-child-label">
+                      {child.label} {child.isRequired ? "*" : ""}
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={childAnswer.answerText}
+                      onChange={(e) => setText(child.key, e.target.value)}
+                      className="ig-onboard-textarea"
+                      placeholder="Type your answer"
+                    />
+                  </div>
+                );
+              })}
+            </section>
+          );
+        })}
+
+        <div className="ig-page-actions">
+          <button className="btn-primary" onClick={onSaveAndContinue} disabled={saving}>
+            {saving ? "Saving..." : "Save and continue"}
+          </button>
+        </div>
+
+        <pre className="ig-page-result">
+          {result || "Your answers will be saved to your profile."}
+        </pre>
+      </section>
     </main>
   );
 }

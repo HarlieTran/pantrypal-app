@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   cookRecipe,
   fetchRecipeDetails,
@@ -108,119 +108,89 @@ export function RecipesPage({ token, onBack }: Props) {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--page-bg)", padding: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <button onClick={onBack}>Back</button>
-        <h1 style={{ margin: 0 }}>Suggested Recipes</h1>
-        <button onClick={() => void loadSuggestions()}>Find Recipes</button>
-      </div>
-
-      <p style={{ color: "var(--muted)", marginTop: 0 }}>
-        Pantry signature: {pantrySignature || "-"}
-      </p>
-
-      {loading && <p style={{ color: "var(--muted)" }}>Finding recipes...</p>}
-      {!loading && error && <p style={{ color: "#b71c1c" }}>{error}</p>}
-
-      {!loading && !error && items.length === 0 && (
-        <p style={{ color: "var(--muted)" }}>No recipe suggestions yet. Add pantry items and retry.</p>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-        {items.map((r) => (
-          <div
-            key={r.id}
-            style={{
-              border: "1px solid var(--line)",
-              borderRadius: 12,
-              overflow: "hidden",
-              background: "var(--panel)",
-            }}
-          >
-            <img src={r.image} alt={r.title} style={{ width: "100%", height: 150, objectFit: "cover" }} />
-            <div style={{ padding: 12 }}>
-              <h3 style={{ margin: "0 0 8px", fontSize: 16 }}>{r.title}</h3>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--muted)" }}>
-                Used: {r.usedIngredientCount} · Missing: {r.missedIngredientCount}
-              </p>
-              <p style={{ margin: "6px 0 10px", fontSize: 13, color: "#e65100" }}>
-                Expiring-soon matched: {r.expiringSoonUsedCount}
-              </p>
-
-              <div style={{ marginBottom: 8 }}>
-                <p style={{ margin: "0 0 4px", fontSize: 12, fontWeight: 600, color: "#2e7d32" }}>Matched</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {r.usedIngredients.slice(0, 6).map((name, idx) => (
-                    <span
-                      key={`used-${r.id}-${idx}`}
-                      style={{
-                        fontSize: 11,
-                        padding: "2px 8px",
-                        borderRadius: 999,
-                        background: "#e8f5e9",
-                        color: "#2e7d32",
-                      }}
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{ marginBottom: 10 }}>
-                <p style={{ margin: "0 0 4px", fontSize: 12, fontWeight: 600, color: "#b71c1c" }}>Missing</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {r.missedIngredients.slice(0, 6).map((name, idx) => (
-                    <span
-                      key={`missed-${r.id}-${idx}`}
-                      style={{
-                        fontSize: 11,
-                        padding: "2px 8px",
-                        borderRadius: 999,
-                        background: "#ffebee",
-                        color: "#b71c1c",
-                      }}
-                    >
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <button onClick={() => void openDetails(r.id)}>View Recipe</button>
+    <main className="ig-screen">
+      <section className="ig-page-shell ig-recipes-shell">
+        <header className="ig-toolbar">
+          <div className="ig-toolbar-left">
+            <button className="btn-secondary" onClick={onBack}>Back</button>
+            <div>
+              <h1 className="ig-toolbar-title">Suggested Recipes</h1>
+              <p className="ig-toolbar-subtitle">Pantry signature: {pantrySignature || "-"}</p>
             </div>
           </div>
-        ))}
-      </div>
+          <div className="ig-toolbar-actions">
+            <button className="btn-primary" onClick={() => void loadSuggestions()}>Find Recipes</button>
+          </div>
+        </header>
 
-      <RecipeDetailsModal
-        open={selectedId !== null}
-        recipe={selectedRecipe}
-        matchedIngredients={selectedSuggestion?.usedIngredients ?? []}
-        missingIngredients={selectedSuggestion?.missedIngredients ?? []}
-        loading={detailsLoading}
-        error={detailsError}
-        cooking={cooking}
-        cookPreview={cookPreview}
-        cookError={cookError}
-        onClose={() => {
-          setSelectedId(null);
-          setSelectedRecipe(null);
-          setSelectedSuggestion(null);
-          setCookPreview(null);
-          setCookError("");
-          setDetailsError("");
-        }}
-        onRetry={() => {
-          if (selectedId) void openDetails(selectedId);
-        }}
-        onCookPreview={() => {
-          void handleCookPreview();
-        }}
-        onCookConfirm={() => {
-          void handleCookConfirm();
-        }}
-      />
-    </div>
+        {loading ? <p className="ig-page-note">Finding recipes...</p> : null}
+        {!loading && error ? <p className="ig-error-note">{error}</p> : null}
+        {!loading && !error && items.length === 0 ? (
+          <p className="ig-page-note">No recipe suggestions yet. Add pantry items and retry.</p>
+        ) : null}
+
+        <div className="ig-recipes-grid">
+          {items.map((r) => (
+            <article key={r.id} className="ig-recipe-card">
+              <img src={r.image} alt={r.title} className="ig-recipe-card-image" />
+              <div className="ig-recipe-card-body">
+                <h3>{r.title}</h3>
+                <p>Used: {r.usedIngredientCount} - Missing: {r.missedIngredientCount}</p>
+                <p className="ig-recipe-expire">Expiring-soon matched: {r.expiringSoonUsedCount}</p>
+
+                <div className="ig-chip-group-wrap">
+                  <p className="ig-chip-title matched">Matched</p>
+                  <div className="ig-chip-group">
+                    {r.usedIngredients.slice(0, 6).map((name, idx) => (
+                      <span key={`used-${r.id}-${idx}`} className="ig-chip matched">{name}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="ig-chip-group-wrap">
+                  <p className="ig-chip-title missing">Missing</p>
+                  <div className="ig-chip-group">
+                    {r.missedIngredients.slice(0, 6).map((name, idx) => (
+                      <span key={`missed-${r.id}-${idx}`} className="ig-chip missing">{name}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <button className="btn-secondary" onClick={() => void openDetails(r.id)}>View Recipe</button>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <RecipeDetailsModal
+          open={selectedId !== null}
+          recipe={selectedRecipe}
+          matchedIngredients={selectedSuggestion?.usedIngredients ?? []}
+          missingIngredients={selectedSuggestion?.missedIngredients ?? []}
+          loading={detailsLoading}
+          error={detailsError}
+          cooking={cooking}
+          cookPreview={cookPreview}
+          cookError={cookError}
+          onClose={() => {
+            setSelectedId(null);
+            setSelectedRecipe(null);
+            setSelectedSuggestion(null);
+            setCookPreview(null);
+            setCookError("");
+            setDetailsError("");
+          }}
+          onRetry={() => {
+            if (selectedId) void openDetails(selectedId);
+          }}
+          onCookPreview={() => {
+            void handleCookPreview();
+          }}
+          onCookConfirm={() => {
+            void handleCookConfirm();
+          }}
+        />
+      </section>
+    </main>
   );
 }

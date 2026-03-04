@@ -14,7 +14,7 @@ export function LoginPage({
   email,
   password,
   result,
-  heroImageSrc,
+  heroImageSrc: _heroImageSrc,
   onEmailChange,
   onPasswordChange,
   onLogin,
@@ -22,7 +22,7 @@ export function LoginPage({
   onBackHome,
 }: LoginPageProps) {
   return (
-    <main className="auth-page" style={{ backgroundImage: `url(${heroImageSrc})` }}>
+    <main className="auth-page">
       <div className="auth-overlay">
         <header className="auth-nav">
           <div className="logo">PANTRYPAL</div>
@@ -42,8 +42,8 @@ export function LoginPage({
             />
           </div>
           <div className="auth-actions">
-            <button onClick={onLogin}>Login</button>
-            <button onClick={onGoSignUp}>No account? Sign up</button>
+            <button className="btn-primary" onClick={onLogin}>Login</button>
+            <button className="btn-secondary" onClick={onGoSignUp}>No account? Sign up</button>
           </div>
           <pre className="auth-result">{result || " "}</pre>
         </section>

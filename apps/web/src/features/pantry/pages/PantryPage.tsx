@@ -25,8 +25,6 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
   const [error, setError] = useState("");
   const [modal, setModal] = useState<Modal>("none");
 
-  // ─── Fetch pantry ───────────────────────────────────────────────────────────
-
   const loadPantry = useCallback(async () => {
     try {
       setLoading(true);
@@ -45,8 +43,6 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
     void loadPantry();
   }, [loadPantry]);
 
-  // ─── Add single item ────────────────────────────────────────────────────────
-
   const handleAdd = async (data: {
     rawName: string;
     quantity: number;
@@ -56,12 +52,8 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
   }) => {
     const item = await addPantryItem(token, data);
     setItems((prev) => [item, ...prev]);
-    setMeta((prev) =>
-      prev ? { ...prev, itemCount: prev.itemCount + 1 } : prev,
-    );
+    setMeta((prev) => (prev ? { ...prev, itemCount: prev.itemCount + 1 } : prev));
   };
-
-  // ─── Bulk add from image ────────────────────────────────────────────────────
 
   const handleBulkAdd = async (parsed: ParsedIngredient[]) => {
     const newItems = await addPantryItemsBulk(token, parsed);
@@ -72,8 +64,6 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
         : prev,
     );
   };
-
-  // ─── Delete item ────────────────────────────────────────────────────────────
 
   const handleDelete = async (itemId: string) => {
     try {
@@ -87,191 +77,54 @@ export function PantryPage({ token, onBack, onGenerateRecipes }: Props) {
     }
   };
 
-  // ─── Expiry summary ─────────────────────────────────────────────────────────
-
   const expiredCount = items.filter((i) => i.expiryStatus === "expired").length;
-  const expiringSoonCount = items.filter(
-    (i) => i.expiryStatus === "expiring_soon",
-  ).length;
+  const expiringSoonCount = items.filter((i) => i.expiryStatus === "expiring_soon").length;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--page-bg)",
-        paddingBottom: "40px",
-      }}
-    >
-      {/* ── Header ── */}
-      <div
-        style={{
-          background: "var(--panel)",
-          borderBottom: "1px solid var(--line)",
-          padding: "16px 24px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "12px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button
-            onClick={onBack}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "20px",
-              padding: "4px",
-              color: "var(--ink)",
-            }}
-          >
-            ←
-          </button>
-          <div>
-            <h1
-              style={{
-                margin: 0,
-                fontSize: "22px",
-                fontFamily: "Georgia, serif",
-                color: "var(--ink)",
-              }}
-            >
-              My Pantry
-            </h1>
-            {meta && (
-              <p style={{ margin: 0, fontSize: "12px", color: "var(--muted)" }}>
-                {meta.itemCount} item{meta.itemCount !== 1 ? "s" : ""}
-                {meta.expiringCount > 0 && (
-                  <span style={{ color: "#e65100" }}>
-                    {" "}· {meta.expiringCount} expiring soon
-                  </span>
-                )}
-              </p>
-            )}
+    <main className="ig-screen">
+      <section className="ig-page-shell ig-pantry-shell">
+        <header className="ig-toolbar">
+          <div className="ig-toolbar-left">
+            <button className="btn-secondary" onClick={onBack}>Back</button>
+            <div>
+              <h1 className="ig-toolbar-title">My Pantry</h1>
+              {meta ? (
+                <p className="ig-toolbar-subtitle">
+                  {meta.itemCount} item{meta.itemCount !== 1 ? "s" : ""}
+                  {meta.expiringCount > 0 ? ` - ${meta.expiringCount} expiring soon` : ""}
+                </p>
+              ) : null}
+            </div>
           </div>
-        </div>
 
-        {/* Action buttons */}
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            onClick={onGenerateRecipes}
-            title="Generate recipes from pantry"
-            style={{
-              ...actionBtnStyle,
-              background: "#2e7d32",
-              color: "#fff",
-              border: "none",
-            }}
-          >
-            Recipes
-          </button>
-          <button
-            onClick={() => setModal("upload")}
-            title="Upload image"
-            style={actionBtnStyle}
-          >
-            📷
-          </button>
-          <button
-            onClick={() => setModal("add")}
-            title="Add item"
-            style={{
-              ...actionBtnStyle,
-              background: "var(--accent)",
-              color: "#fff",
-              border: "none",
-            }}
-          >
-            + Add
-          </button>
-        </div>
-      </div>
-
-      {/* ── Expiry alert banner ── */}
-      {(expiredCount > 0 || expiringSoonCount > 0) && (
-        <div
-          style={{
-            margin: "16px 24px 0",
-            padding: "12px 16px",
-            borderRadius: "12px",
-            background: expiredCount > 0 ? "#fce4ec" : "#fff3e0",
-            color: expiredCount > 0 ? "#b71c1c" : "#e65100",
-            fontSize: "13px",
-            fontWeight: 500,
-          }}
-        >
-          {expiredCount > 0 && (
-            <span>⚠️ {expiredCount} item{expiredCount !== 1 ? "s have" : " has"} expired. </span>
-          )}
-          {expiringSoonCount > 0 && (
-            <span>🕐 {expiringSoonCount} item{expiringSoonCount !== 1 ? "s are" : " is"} expiring soon.</span>
-          )}
-        </div>
-      )}
-
-      {/* ── Content ── */}
-      <div
-        style={{
-          margin: "16px 24px 0",
-          background: "var(--panel)",
-          borderRadius: "16px",
-          border: "1px solid var(--line)",
-          overflow: "hidden",
-        }}
-      >
-        {loading ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "48px",
-              color: "var(--muted)",
-            }}
-          >
-            Loading pantry…
+          <div className="ig-toolbar-actions">
+            <button className="btn-secondary" onClick={onGenerateRecipes} title="Generate recipes from pantry">Recipes</button>
+            <button className="btn-secondary" onClick={() => setModal("upload")} title="Upload image">Upload</button>
+            <button className="btn-primary" onClick={() => setModal("add")} title="Add item">+ Add</button>
           </div>
-        ) : error ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "48px",
-              color: "#b71c1c",
-              fontSize: "14px",
-            }}
-          >
-            {error}
+        </header>
+
+        {(expiredCount > 0 || expiringSoonCount > 0) ? (
+          <div className={`ig-alert ${expiredCount > 0 ? "is-danger" : "is-warning"}`}>
+            {expiredCount > 0 ? `${expiredCount} item${expiredCount !== 1 ? "s have" : " has"} expired.` : ""}
+            {expiringSoonCount > 0 ? ` ${expiringSoonCount} item${expiringSoonCount !== 1 ? "s are" : " is"} expiring soon.` : ""}
           </div>
-        ) : (
-          <PantryItemList items={items} onDelete={handleDelete} />
-        )}
-      </div>
+        ) : null}
 
-      {/* ── Modals ── */}
-      {modal === "add" && (
-        <AddItemModal
-          onAdd={handleAdd}
-          onClose={() => setModal("none")}
-        />
-      )}
+        <section className="ig-card ig-pantry-content">
+          {loading ? <div className="ig-page-note">Loading pantry...</div> : null}
+          {!loading && error ? <div className="ig-error-note">{error}</div> : null}
+          {!loading && !error ? <PantryItemList items={items} onDelete={handleDelete} /> : null}
+        </section>
 
-      {modal === "upload" && (
-        <ImageUploadParser
-          token={token}
-          onComplete={loadPantry}
-          onClose={() => setModal("none")}
-        />
-      )}
-    </div>
+        {modal === "add" ? (
+          <AddItemModal onAdd={handleAdd} onClose={() => setModal("none")} />
+        ) : null}
+
+        {modal === "upload" ? (
+          <ImageUploadParser token={token} onComplete={loadPantry} onClose={() => setModal("none")} />
+        ) : null}
+      </section>
+    </main>
   );
 }
-
-const actionBtnStyle: React.CSSProperties = {
-  padding: "8px 16px",
-  borderRadius: "10px",
-  border: "1px solid var(--line)",
-  background: "var(--panel)",
-  fontSize: "14px",
-  cursor: "pointer",
-  fontWeight: 500,
-  color: "var(--ink)",
-};
