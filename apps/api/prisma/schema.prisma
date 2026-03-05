@@ -19,6 +19,7 @@ model UserProfile {
   answers             UserAnswer[]
   recipeSelections    UserRecipeSelection[]
   preferenceProfile   UserPreferenceProfile?
+  pantryItems         PantryItem[]
   pantryMeta          PantryMeta?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
@@ -185,10 +186,38 @@ model Ingredient {
   canonicalName String   @unique
   aliases       Json     @default("[]")
   category      IngredientCategory?
+  pantryItems   PantryItem[]
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@index([canonicalName])
   @@map("ingredients")
+}
+
+model PantryItem {
+  id            String    @id @default(cuid())
+  userProfileId String
+
+  // What the user typed / scanned
+  rawName       String
+  // Canonical name resolved by the ingredient matching service
+  canonicalName String
+  // FK to the seeded Ingredient table (nullable — for unknown ingredients)
+  ingredientId  String?
+
+  category      String    // produce | dairy | meat | seafood | grains | spices | condiments | frozen | beverages | snacks | other
+  quantity      Float     @default(1)
+  unit          String    @default("")
+  notes         String?
+  expiryDate    String?   // stored as YYYY-MM-DD string to match existing frontend type
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  userProfile   UserProfile  @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+  ingredient    Ingredient?  @relation(fields: [ingredientId], references: [id])
+
+  @@index([userProfileId])
+  @@index([userProfileId, expiryDate])
 }

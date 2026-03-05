@@ -8,7 +8,9 @@ cron.schedule("5 0 * * *", async () => {
   } catch (e) {
     console.error("daily prewarm error", e);
   }
-});
+},
+{timezone: "Etc/UTC"}
+);
 
 console.log("worker started");
 

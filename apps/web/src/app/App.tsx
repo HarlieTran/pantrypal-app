@@ -13,7 +13,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8788";
 const DEFAULT_SPECIAL_IMAGE =
   "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=2600&q=95";
 
-type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile";
+type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile" | "edit-profile";
 
 // Right panel state machine — all auth lives here
 export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "onboarding-q" | "onboarding-picks";
@@ -265,6 +265,7 @@ export function App() {
         view === "pantry" ? "pantry" 
         : view === "recipes" ? "recipes" 
         : view === "profile" ? "profile"
+        : view === "edit-profile" ? "edit-profile"
         : "home"
       }
       heroImageSrc={heroImageSrc}
@@ -310,6 +311,7 @@ export function App() {
       onPicksComplete={handlePicksComplete}
       onRequestMorePicks={() => undefined}
       onProfileNavigate={() => setView("profile")}
+      onEditProfileNavigate={() => setView("edit-profile")}
     />
   );
 }

@@ -6,6 +6,7 @@ import { RecipePreferencePicker } from "../../onboarding/components/RecipePrefer
 import { PantryPage } from "../../pantry/pages/PantryPage";
 import { RecipesPage } from "../../recipes/pages/RecipesPage";
 import {ProfilePage} from "../../profile/pages/ProfilePage"
+import { EditProfilePage } from "../../profile/pages/EditProfilePage";
 
 type ExpiringPreviewItem = {
   name: string;
@@ -15,7 +16,7 @@ type ExpiringPreviewItem = {
 };
 
 type HomeHeroProps = {
-  centerView: "home" | "pantry" | "recipes" | "profile";
+  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;
@@ -55,6 +56,7 @@ type HomeHeroProps = {
   onRequestMorePicks: () => void;
   onRightPanelChange: (panel: RightPanel) => void;
   onProfileNavigate: () => void;
+  onEditProfileNavigate: () => void;
 };
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -129,6 +131,7 @@ export function HomeHero({
   onRequestMorePicks,
   onRightPanelChange,
   onProfileNavigate,
+  onEditProfileNavigate,
 }: HomeHeroProps) {
   const [openRow, setOpenRow] = useState<"history" | "flavor" | "origin" | null>(null);
   const today = new Date();
@@ -509,7 +512,13 @@ export function HomeHero({
                 accountId={accountId}
                 onboardingCompleted={onboardingCompleted}
                 onStartOnboarding={() => onRightPanelChange("onboarding-q")}
+                onEditProfile={onEditProfileNavigate}
                 embedded />
+            ) : centerView === "edit-profile" ? (
+              <EditProfilePage 
+                token={token}
+                displayName={displayName}
+                onBack={onProfileNavigate} />
             ) : (
               <>
                 <div className="ig-stories" aria-label="Weekly special recipes">
