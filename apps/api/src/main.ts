@@ -28,7 +28,10 @@ const server = createServer(async (req, res) => {
   if (!req.url) return sendJson(res, 400, { error: "Invalid request" });
   if (req.method === "OPTIONS") return sendJson(res, 204, {});
 
-  const rawBody = req.method === "PUT" || req.method === "POST" ? await readBody(req) : undefined;
+  const rawBody =
+    req.method === "PUT" || req.method === "POST" || req.method === "PATCH"
+      ? await readBody(req)
+      : undefined;
   const response = await handleApiRoute(req.method ?? "GET", req.url, req.headers.authorization, rawBody);
   return sendJson(res, response.statusCode, response.body);
 });

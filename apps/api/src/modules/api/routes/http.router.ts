@@ -7,6 +7,7 @@ import {
   getUserProfile,
   markOnboardingComplete,
   saveUserAnswers,
+  updateUserProfile,
 } from "../../users/index.js";
 import { getRandomRecipeImages } from "../../users/index.js";
 import { submitRecipeSelections } from "../../users/index.js";
@@ -80,6 +81,15 @@ const recipeSuggestionsSchema = z.object({
 const cookRecipeSchema = z.object({
   servingsUsed: z.number().positive().max(20).optional(),
   dryRun: z.boolean().optional(),
+});
+
+const updateProfileSchema = z.object({
+  displayName: z.string().max(120).optional(),
+  likes: z.string().max(500).optional(),
+  dietType: z.array(z.string().min(1)).optional(),
+  allergies: z.array(z.string().min(1)).optional(),
+  disliked: z.string().max(500).optional(),
+  notes: z.string().max(500).optional(),
 });
 
 
@@ -370,7 +380,24 @@ if (method === "GET" && path === "/me/profile") {
     }
   }
 
+if (method === "PATCH" && path === "/me/profile") {
+    try {
+      const claims = await requireAuth({ headers: { authorization: authHeader } });
+      const parsed = updateProfileSchema.parse(rawBody ? JSON.parse(rawBody) : {});
+      const profile = await updateUserProfile(claims.sub, parsed);
+      return { statusCode: 200, body: { profile } };
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return { statusCode: 400, body: { error: "Invalid payload", details: err.flatten() } };
+      }
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      if (msg.includes("not found") || msg.toLowerCase().includes("unauthorized")) {
+        return { statusCode: 401, body: { error: "Unauthorized" } };
+      }
+      console.error("profile update error:", err);
+      return { statusCode: 500, body: { error: "Failed to update profile" } };
+    }
+  }
+
   return { statusCode: 404, body: { error: "Not found" } };
 }
-
-

@@ -8,4 +8,4 @@ export {
   submitRecipeSelections,
 } from "./services/users.service.js";
 
-export { getUserProfile } from "./services/profile.service.js";
+export { getUserProfile, updateUserProfile } from "./services/profile.service.js";

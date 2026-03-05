@@ -1,26 +1,17 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: PantryPal API (Signup/Login v1) on Lambda + API Gateway HTTP API
+Description: PantryPal Daily Special prewarm scheduler (Lambda + EventBridge)
 
 Parameters:
-  FrontendOrigin:
-    Type: String
-    Default: "http://localhost:5173"
   DatabaseUrl:
     Type: String
     NoEcho: true
-  CognitoRegion:
-    Type: String
-  CognitoUserPoolId:
-    Type: String
-  CognitoAppClientId:
-    Type: String
   AwsRegion:
     Type: String
     Default: "us-east-2"
   BedrockRegion:
     Type: String
-    Default: "us-east-1"
+    Default: "us-east-2"
   BedrockModelId:
     Type: String
     Default: "anthropic.claude-3-5-sonnet-20240620-v1:0"
@@ -37,17 +28,13 @@ Parameters:
 Globals:
   Function:
     Runtime: nodejs20.x
-    Timeout: 15
-    MemorySize: 512
+    Timeout: 90
+    MemorySize: 1024
     Architectures:
       - x86_64
     Environment:
       Variables:
-        FRONTEND_ORIGIN: !Ref FrontendOrigin
         DATABASE_URL: !Ref DatabaseUrl
-        COGNITO_REGION: !Ref CognitoRegion
-        COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
-        COGNITO_APP_CLIENT_ID: !Ref CognitoAppClientId
         AWS_REGION: !Ref AwsRegion
         BEDROCK_REGION: !Ref BedrockRegion
         BEDROCK_MODEL_ID: !Ref BedrockModelId
@@ -56,58 +43,11 @@ Globals:
         DEFAULT_DISH_IMAGE_URL: !Ref DefaultDishImageUrl
 
 Resources:
-  PantryPalHttpApi:
-    Type: AWS::Serverless::HttpApi
-    Properties:
-      CorsConfiguration:
-        AllowMethods:
-          - GET
-          - POST
-          - PATCH
-          - OPTIONS
-        AllowHeaders:
-          - Content-Type
-          - Authorization
-        AllowOrigins:
-          - !Ref FrontendOrigin
-
-  PantryPalApiFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../../../apps/api
-      Handler: src/lambda.handler
-      Events:
-        Health:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref PantryPalHttpApi
-            Method: GET
-            Path: /health
-        Bootstrap:
-          Type: HttpApi
-          Properties:
-            ApiId: !Ref PantryPalHttpApi
-            Method: POST
-            Path: /me/bootstrap
-      Policies:
-        - AWSLambdaBasicExecutionRole
-    Metadata:
-      BuildMethod: esbuild
-      BuildProperties:
-        Minify: true
-        Target: es2022
-        Format: esm
-        EntryPoints:
-          - src/lambda.ts
-        Sourcemap: false
-
   DailySpecialPrewarmFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../../../apps/api
       Handler: src/jobs/daily-special-prewarm.lambda.handler
-      Timeout: 90
-      MemorySize: 1024
       Events:
         DailyAt0005Utc:
           Type: Schedule
@@ -140,6 +80,6 @@ Resources:
         Sourcemap: false
 
 Outputs:
-  ApiBaseUrl:
-    Description: Base URL for Amplify frontend (set as VITE_API_BASE_URL)
-    Value: !Sub "https://${PantryPalHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  DailySpecialPrewarmFunctionArn:
+    Description: ARN of the scheduled Daily Special prewarm Lambda
+    Value: !GetAtt DailySpecialPrewarmFunction.Arn

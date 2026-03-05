@@ -94,9 +94,19 @@ Provide these parameter values during deploy:
 - `CognitoRegion`
 - `CognitoUserPoolId`
 - `CognitoAppClientId`
+- `AwsRegion`
+- `BedrockRegion`
+- `BedrockModelId`
+- `DailySpecialsBucket`
+- `UnsplashAccessKey` (optional, can be blank)
+- `DefaultDishImageUrl` (optional, can be blank)
 
 Copy CloudFormation output:
 - `ApiBaseUrl` -> use as frontend `VITE_API_BASE_URL`.
+
+Daily special automation:
+- A dedicated Lambda now runs on EventBridge schedule `cron(5 0 * * ? *)` (00:05 UTC daily).
+- It calls `getOrCreateDailySpecial("global")` and persists the generated result.
 
 Note for Prisma on Lambda:
 - Build/deploy from an environment compatible with Lambda Linux runtime so Prisma engine artifacts match.

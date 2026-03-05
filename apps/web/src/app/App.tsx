@@ -1,33 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import { confirmSignUp, resendCode, signIn, signUp } from "../features/auth";
-import { getMe } from "../features/onboarding";
-import { OnboardingQuestionnaire } from "../features/onboarding";
-import { RecipePreferencePicker } from "../features/onboarding";
-import { submitRecipeSelections } from "../features/onboarding";
-import { HomePage } from "../features/home";
-import type { HomeSpecial, PreferenceProfile } from "../features/home";
-import { fetchPantry } from "../features/pantry/api/pantry.api";
-import type { PantryItem } from "../features/pantry/model/types";
+import { useState } from "react";
+import { confirmSignUp, resendCode, signIn, signUp } from "../modules/auth";
+import { getMe } from "../modules/onboarding";
+import { OnboardingQuestionnaire } from "../modules/onboarding";
+import { RecipePreferencePicker } from "../modules/onboarding";
+import { submitRecipeSelections } from "../modules/onboarding";
+import { HomePage } from "../modules/home";
+import type { PreferenceProfile } from "../modules/home";
+import { useIdentity } from "./application/useIdentity";
+import { useHomeAndPantryPreview } from "./application/useHomeAndPantryPreview";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8788";
-const DEFAULT_SPECIAL_IMAGE =
-  "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=2600&q=95";
 
 type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile" | "edit-profile";
 
 // Right panel state machine — all auth lives here
 export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "onboarding-q" | "onboarding-picks";
-
-type HomePayload = {
-  todaySpecial?: HomeSpecial;
-};
-
-type ExpiringPreviewItem = {
-  name: string;
-  expiryDate?: string;
-  daysUntilExpiry?: number;
-  status: "expired" | "expiring_soon";
-};
 
 export function App() {
   const [view, setView] = useState<View>("home");
@@ -42,88 +29,13 @@ export function App() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const [token, setToken] = useState("");
-  const [homeData, setHomeData] = useState<HomePayload | null>(null);
-  const [homeLoading, setHomeLoading] = useState(false);
-  const [homeError, setHomeError] = useState("");
-  const [heroImageBroken, setHeroImageBroken] = useState(false);
   const [preferenceProfile, setPreferenceProfile] = useState<PreferenceProfile | null>(null);
-  const [expiringItems, setExpiringItems] = useState<ExpiringPreviewItem[]>([]);
 
   const isLoggedIn = Boolean(token);
-  const special = homeData?.todaySpecial;
+  const { displayName, accountId, avatarLabel } = useIdentity({ email, givenName, familyName, isLoggedIn });
+  const { special, heroImageSrc, homeLoading, homeError, expiringItems } = useHomeAndPantryPreview(token, isLoggedIn);
 
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-
-  const heroImageSrc = useMemo(() => {
-    if (special?.imageUrl && !heroImageBroken) return special.imageUrl;
-    return DEFAULT_SPECIAL_IMAGE;
-  }, [special?.imageUrl, heroImageBroken]);
-
-  const displayName = useMemo(() => {
-    const full = `${givenName} ${familyName}`.trim();
-    if (full) return full;
-    if (email.includes("@")) return email.split("@")[0];
-    return isLoggedIn ? "PantryPal User" : "Guest";
-  }, [email, familyName, givenName, isLoggedIn]);
-
-  const accountId = useMemo(() => {
-    if (email.trim()) return email.trim();
-    if (isLoggedIn) return "authenticated-user";
-    return "guest";
-  }, [email, isLoggedIn]);
-
-  const avatarLabel = useMemo(() => {
-    const source = displayName || accountId;
-    return (source[0] ?? "P").toUpperCase();
-  }, [accountId, displayName]);
-
-  const mapExpiringItems = (items: PantryItem[]): ExpiringPreviewItem[] =>
-    items
-      .filter((i) => i.expiryStatus === "expired" || i.expiryStatus === "expiring_soon")
-      .sort((a, b) => Number(a.daysUntilExpiry ?? 9999) - Number(b.daysUntilExpiry ?? 9999))
-      .slice(0, 5)
-      .map((item) => ({
-        name: item.canonicalName || item.rawName,
-        expiryDate: item.expiryDate,
-        daysUntilExpiry: item.daysUntilExpiry,
-        status: item.expiryStatus === "expired" ? "expired" : "expiring_soon",
-      }));
-
-  async function fetchHome() {
-    try {
-      setHomeLoading(true);
-      setHomeError("");
-      setHeroImageBroken(false);
-      const res = await fetch(`${API_BASE}/home`);
-      const data = (await res.json()) as HomePayload;
-      if (!res.ok) { setHomeError(`Failed to load home (${res.status})`); return; }
-      setHomeData(data);
-    } catch (e) {
-      setHomeError(`Failed to load home: ${String((e as Error).message || e)}`);
-    } finally {
-      setHomeLoading(false);
-    }
-  }
-
-  useEffect(() => { void fetchHome(); }, []);
-
-  useEffect(() => {
-    if (!isLoggedIn) { setExpiringItems([]); return; }
-    void (async () => {
-      try {
-        const data = await fetchPantry(token);
-        setExpiringItems(mapExpiringItems(data.items));
-      } catch { setExpiringItems([]); }
-    })();
-  }, [isLoggedIn, token]);
-
-  useEffect(() => {
-    if (!special?.imageUrl) { setHeroImageBroken(false); return; }
-    const image = new Image();
-    image.onload = () => setHeroImageBroken(false);
-    image.onerror = () => setHeroImageBroken(true);
-    image.src = special.imageUrl;
-  }, [special?.imageUrl]);
 
   // ─── Auth handlers ───────────────────────────────────────────────────────
 
