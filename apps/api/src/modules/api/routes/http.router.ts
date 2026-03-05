@@ -4,6 +4,7 @@ import {
   bootstrapUser,
   getMeBySubject,
   getOnboardingQuestions,
+  getUserProfile,
   markOnboardingComplete,
   saveUserAnswers,
 } from "../../users/index.js";
@@ -354,6 +355,20 @@ if (method === "POST" && path.match(/^\/recipes\/\d+\/cook$/)) {
   }
 }
 
+if (method === "GET" && path === "/me/profile") {
+    try {
+      const claims = await requireAuth({ headers: { authorization: authHeader } });
+      const profile = await getUserProfile(claims.sub);
+      return { statusCode: 200, body: { profile } };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      if (msg.includes("not found") || msg.toLowerCase().includes("unauthorized")) {
+        return { statusCode: 401, body: { error: "Unauthorized" } };
+      }
+      console.error("profile error:", err);
+      return { statusCode: 500, body: { error: "Failed to load profile" } };
+    }
+  }
 
   return { statusCode: 404, body: { error: "Not found" } };
 }

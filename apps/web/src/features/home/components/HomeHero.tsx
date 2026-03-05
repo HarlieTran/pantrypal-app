@@ -5,6 +5,7 @@ import { OnboardingQuestionnaire } from "../../onboarding/components/OnboardingQ
 import { RecipePreferencePicker } from "../../onboarding/components/RecipePreferencePicker";
 import { PantryPage } from "../../pantry/pages/PantryPage";
 import { RecipesPage } from "../../recipes/pages/RecipesPage";
+import {ProfilePage} from "../../profile/pages/ProfilePage"
 
 type ExpiringPreviewItem = {
   name: string;
@@ -14,7 +15,7 @@ type ExpiringPreviewItem = {
 };
 
 type HomeHeroProps = {
-  centerView: "home" | "pantry" | "recipes";
+  centerView: "home" | "pantry" | "recipes" | "profile";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;
@@ -53,6 +54,7 @@ type HomeHeroProps = {
   onPicksComplete: (payload: { selectedImageIds: string[]; rejectedImageIds: string[] }) => Promise<void>;
   onRequestMorePicks: () => void;
   onRightPanelChange: (panel: RightPanel) => void;
+  onProfileNavigate: () => void;
 };
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -126,6 +128,7 @@ export function HomeHero({
   onPicksComplete,
   onRequestMorePicks,
   onRightPanelChange,
+  onProfileNavigate,
 }: HomeHeroProps) {
   const [openRow, setOpenRow] = useState<"history" | "flavor" | "origin" | null>(null);
   const today = new Date();
@@ -416,7 +419,7 @@ export function HomeHero({
           </AnimatedPanel>
         );
     }
-  } // ← this closing brace was missing — renderRightPanel ends here
+  } // renderRightPanel ends here
 
   // ─── Layout ─────────────────────────────────────────────────────────────────
 
@@ -461,7 +464,7 @@ export function HomeHero({
               </button>
 
               {/* Profile */}
-              <button className="ig-left-link">
+              <button className="ig-left-link" onClick={onProfileNavigate}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
                 </svg>
@@ -498,6 +501,15 @@ export function HomeHero({
               <PantryPage token={token} onBack={onHome} onGenerateRecipes={onRecipesNavigate} embedded />
             ) : centerView === "recipes" ? (
               <RecipesPage token={token} onBack={onHome} embedded />
+            ) : centerView === "profile" ? (
+              <ProfilePage
+                token={token}
+                avatarLabel={avatarLabel}
+                displayName={displayName}
+                accountId={accountId}
+                onboardingCompleted={onboardingCompleted}
+                onStartOnboarding={() => onRightPanelChange("onboarding-q")}
+                embedded />
             ) : (
               <>
                 <div className="ig-stories" aria-label="Weekly special recipes">

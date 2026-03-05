@@ -228,5 +228,3 @@ export async function submitRecipeSelections(
   return preferenceProfile;
 }
 
-
-

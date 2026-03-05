@@ -10,7 +10,7 @@ type ExpiringPreviewItem = {
 };
 
 type HomePageProps = {
-  centerView: "home" | "pantry" | "recipes";
+  centerView: "home" | "pantry" | "recipes" | "profile";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;
@@ -50,6 +50,7 @@ type HomePageProps = {
   onOnboardingComplete: () => void;
   onPicksComplete: (payload: { selectedImageIds: string[]; rejectedImageIds: string[] }) => Promise<void>;
   onRequestMorePicks: () => void;
+  onProfileNavigate: () => void;
 };
 
 
