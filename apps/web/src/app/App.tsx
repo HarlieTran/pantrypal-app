@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "./application/useSession";
 import { confirmSignUp, resendCode, signIn, signUp } from "../modules/auth";
 import { getMe } from "../modules/onboarding";
-import { OnboardingQuestionnaire } from "../modules/onboarding";
-import { RecipePreferencePicker } from "../modules/onboarding";
-import { submitRecipeSelections } from "../modules/onboarding";
+import { OnboardingQuestionnaire, RecipePreferencePicker, submitRecipeSelections } from "../modules/onboarding";
 import { HomePage } from "../modules/home";
 import type { PreferenceProfile } from "../modules/home";
 import { useIdentity } from "./application/useIdentity";
@@ -28,16 +27,40 @@ export function App() {
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
 
-  const [token, setToken] = useState("");
+  const { session, login, logout } = useSession();
   const [preferenceProfile, setPreferenceProfile] = useState<PreferenceProfile | null>(null);
 
-  const isLoggedIn = Boolean(token);
+  const isLoggedIn = session.status === "authenticated";
+  const token = session.status === "authenticated" ? session.token : "";
   const { displayName, accountId, avatarLabel } = useIdentity({ email, givenName, familyName, isLoggedIn });
-  const { special, heroImageSrc, homeLoading, homeError, expiringItems } = useHomeAndPantryPreview(token, isLoggedIn);
+  const { special, heroImageSrc, homeLoading, homeError, expiringItems } = 
+    useHomeAndPantryPreview(
+      token,
+      isLoggedIn,
+      session.status === "bootstrapping",
+    );
 
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
   // ─── Auth handlers ───────────────────────────────────────────────────────
+
+  // Sync rightPanel and onboardingCompleted when bootstrap resolves
+  useEffect(() => {
+    if (session.status === "authenticated") {
+      // Fetch the user's me data to get onboarding status
+      void (async () => {
+        try {
+          const meResponse = await getMe(session.token);
+          const me = meResponse?.me;
+          setOnboardingCompleted(me?.onboardingCompleted ?? false);
+          setRightPanel("user");
+        } catch {
+          // If fetch fails, still show user panel
+          setRightPanel("user");
+        }
+      })();
+    }
+  }, [session.status]); // only re-runs when status changes
 
   const onSignUp = async () => {
     setAuthLoading(true);
@@ -81,7 +104,6 @@ export function App() {
     setAuthError("");
     try {
       const idToken = await signIn(email.trim(), password);
-      setToken(idToken);
 
       const bootstrapRes = await fetch(`${API_BASE}/me/bootstrap`, {
         method: "POST",
@@ -96,6 +118,9 @@ export function App() {
 
       const meResponse = await getMe(idToken);
       const me = meResponse?.me;
+
+      // Update session state via useSession
+      login(idToken, me?.id ?? "", me?.email ?? email.trim());
 
       // Show success state briefly, then transition
       setRightPanel("success");
@@ -115,7 +140,7 @@ export function App() {
 
 
   const onLogout = () => {
-    setToken("");
+    logout();
     setPreferenceProfile(null);
     setRightPanel("guest");
     setView("home");
@@ -151,6 +176,20 @@ export function App() {
 
   // ─── Full-page views ────────────────────────────────────────────────────
 
+  if (session.status === "bootstrapping") {
+    return (
+      <main style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--page-bg)",
+      }}>
+        <p style={{ color: "var(--muted)", fontSize: "14px" }}>Loading...</p>
+      </main>
+    );
+  }
+  
   if (view === "onboarding") {
     return (
       <OnboardingQuestionnaire

@@ -25,6 +25,7 @@ import {
 } from "../../pantry/index.js";
 
 import { cookRecipeForUser, getRecipeSuggestionsForUser, getRecipeDetails } from "../../recipes/index.js";
+import { getPublicFeed, getPersonalizedFeed, getOrCreateTodayPinnedTopic } from "../../community/index.js";
 
 
 // Add Zod schemas
@@ -92,6 +93,9 @@ const updateProfileSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+const communityFeedSchema = z.object({
+  cursor: z.string().optional(),
+});
 
 
 // Handle API Route
@@ -396,6 +400,94 @@ if (method === "PATCH" && path === "/me/profile") {
       }
       console.error("profile update error:", err);
       return { statusCode: 500, body: { error: "Failed to update profile" } };
+    }
+  }
+
+  // GET /community — public feed (guest) or personalized feed (authenticated)
+  if (method === "GET" && path.startsWith("/community")) {
+    try {
+      const url = new URL(`http://local${path}`);
+      const cursor = url.searchParams.get("cursor") ?? undefined;
+
+      // Try to get auth — but don't require it
+      let userId: string | null = null;
+      let preferences: {
+        likes: string[];
+        dislikes: string[];
+        dietSignals: string[];
+        allergies: string[];
+      } | null = null;
+
+      if (authHeader?.startsWith("Bearer ")) {
+        try {
+          const claims = await requireAuth({ headers: { authorization: authHeader } });
+          userId = claims.sub;
+
+          // Fetch preference profile from Postgres
+          const { prisma } = await import("../../../common/db/prisma.js");
+          const user = await prisma.userProfile.findUnique({
+            where: {
+              authProvider_authSubject: {
+                authProvider: "cognito",
+                authSubject: claims.sub,
+              },
+            },
+            include: {
+              preferenceProfile: true,
+              answers: {
+                include: {
+                  question: { select: { key: true } },
+                  option: { select: { value: true } },
+                },
+              },
+            },
+          });
+
+          if (user?.preferenceProfile) {
+            const allergyAnswers = user.answers
+              .filter((a) => a.question.key === "allergies" && a.option)
+              .map((a) => a.option!.value);
+
+            preferences = {
+              likes: user.preferenceProfile.likes as string[],
+              dislikes: user.preferenceProfile.dislikes as string[],
+              dietSignals: user.preferenceProfile.dietSignals as string[],
+              allergies: allergyAnswers,
+            };
+          }
+        } catch {
+          // Auth failed — treat as guest
+        }
+      }
+
+      // Fetch today's pinned topic
+      const { getOrCreateDailySpecial } = await import("../../home/index.js");
+      const special = await getOrCreateDailySpecial("global");
+      const pinnedTopic = special
+        ? await getOrCreateTodayPinnedTopic({
+            dailySpecialId: special.id,
+            dishName: special.dishName,
+            imageUrl: special.imageUrl ?? null,
+            description: special.description ?? null,
+          })
+        : undefined;
+
+      // Get feed — personalized or public
+      const feed =
+        userId && preferences
+          ? await getPersonalizedFeed(userId, preferences, cursor)
+          : await getPublicFeed(cursor);
+
+      return {
+        statusCode: 200,
+        body: {
+          ...feed,
+          pinnedTopic,
+        },
+      };
+    } catch (error) {
+      console.error("community feed error:", error);
+      return { statusCode: 500, body: { error: "Failed to load community feed" } };
     }
   }
 

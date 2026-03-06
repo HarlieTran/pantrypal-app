@@ -2,22 +2,8 @@ import {
   AuthenticationDetails,
   CognitoUser,
   CognitoUserAttribute,
-  CognitoUserPool,
 } from "amazon-cognito-identity-js";
-
-const userPoolId = import.meta.env.VITE_COGNITO_USER_POOL_ID;
-const clientId = import.meta.env.VITE_COGNITO_APP_CLIENT_ID;
-
-function getPool() {
-  if (!userPoolId || !clientId) {
-    throw new Error("Missing VITE_COGNITO_USER_POOL_ID or VITE_COGNITO_APP_CLIENT_ID");
-  }
-
-  return new CognitoUserPool({
-    UserPoolId: userPoolId,
-    ClientId: clientId,
-  });
-}
+import { getPool } from "./cognito.pool";
 
 export type SignUpInput = {
   email: string;
@@ -90,8 +76,15 @@ export function signIn(email: string, password: string) {
   });
 }
 
-export function signOut(email: string) {
+export function signOut() {
   const pool = getPool();
-  const user = new CognitoUser({ Username: email.trim(), Pool: pool });
-  user.signOut();
+  // getCurrentUser reads from localStorage cache
+  const cognitoUser = pool.getCurrentUser();
+  if (cognitoUser) {
+    cognitoUser.signOut();
+  }
+  // Clear any remaining Cognito keys from localStorage
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith("CognitoIdentityServiceProvider"))
+    .forEach((key) => localStorage.removeItem(key));
 }

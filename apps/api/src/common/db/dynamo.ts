@@ -10,3 +10,7 @@ export const dynamo = DynamoDBDocumentClient.from(raw, {
 });
 
 export const PANTRY_TABLE = process.env.PANTRY_TABLE || "pantrypal-pantry-items";
+export const COMMUNITY_POSTS_TABLE = process.env.COMMUNITY_POSTS_TABLE || "pantrypal-community-posts";
+export const COMMUNITY_LIKES_TABLE = process.env.COMMUNITY_LIKES_TABLE || "pantrypal-community-likes";
+export const COMMUNITY_COMMENTS_TABLE = process.env.COMMUNITY_COMMENTS_TABLE || "pantrypal-community-comments";
+export const COMMUNITY_TOPICS_TABLE = process.env.COMMUNITY_TOPICS_TABLE || "pantrypal-community-topics";

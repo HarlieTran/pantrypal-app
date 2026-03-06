@@ -31,7 +31,7 @@ function mapExpiringItems(items: PantryItem[]): ExpiringPreviewItem[] {
     }));
 }
 
-export function useHomeAndPantryPreview(token: string, isLoggedIn: boolean) {
+export function useHomeAndPantryPreview(token: string, isLoggedIn: boolean, isBootstrapping: boolean) {
   const [homeData, setHomeData] = useState<HomePayload | null>(null);
   const [homeLoading, setHomeLoading] = useState(false);
   const [homeError, setHomeError] = useState("");
@@ -67,7 +67,7 @@ export function useHomeAndPantryPreview(token: string, isLoggedIn: boolean) {
   }, []);
 
   useEffect(() => {
-    if (!isLoggedIn) {
+    if (!isLoggedIn || isBootstrapping) {
       setExpiringItems([]);
       return;
     }
@@ -79,7 +79,7 @@ export function useHomeAndPantryPreview(token: string, isLoggedIn: boolean) {
         setExpiringItems([]);
       }
     })();
-  }, [isLoggedIn, token]);
+  }, [isLoggedIn, isBootstrapping, token]);
 
   useEffect(() => {
     if (!special?.imageUrl) {
