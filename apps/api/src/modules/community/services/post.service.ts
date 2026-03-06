@@ -90,9 +90,9 @@ export async function getPublicFeed(cursor?: string): Promise<CommunityFeedRespo
   // Resolve image URLs and score
   const scored = await Promise.all(
     posts.map(async (post) => {
-      const imageUrl = await resolveImageUrl(post);
+      const resolvedUrl = await resolveImageUrl(post);
       return {
-        post: { ...post, imageUrl },
+        post: { ...post, imageUrl: resolvedUrl ?? post.imageUrl },
         score: scorePostForGuest(post),
       };
     }),
@@ -132,7 +132,7 @@ export async function getPersonalizedFeed(
   // Resolve image URLs, score, and check likes
   const scored = await Promise.all(
     posts.map(async (post) => {
-      const [imageUrl, isLiked] = await Promise.all([
+      const [resolvedUrl, isLiked] = await Promise.all([
         resolveImageUrl(post),
         hasUserLikedPost(userId, post.postId),
       ]);
@@ -169,7 +169,7 @@ export async function getPersonalizedFeed(
         post.likeCount * 0.1;
 
       return {
-        post: { ...post, imageUrl, isLikedByCurrentUser: isLiked },
+        post: { ...post, imageUrl: resolvedUrl ?? post.imageUrl, isLikedByCurrentUser: isLiked },
         score,
       };
     }),

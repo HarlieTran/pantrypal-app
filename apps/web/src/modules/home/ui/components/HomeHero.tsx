@@ -5,6 +5,7 @@ import { OnboardingQuestionnaire, RecipePreferencePicker } from "../../../onboar
 import { PantryPage } from "../../../pantry";
 import { RecipesPage } from "../../../recipes";
 import { ProfilePage, EditProfilePage } from "../../../profile";
+import { CommunityFeed, useCommunityFeed, useWeeklyTopics, WeeklyStoryCircles } from "../../../community";
 
 type ExpiringPreviewItem = {
   name: string;
@@ -14,7 +15,7 @@ type ExpiringPreviewItem = {
 };
 
 type HomeHeroProps = {
-  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile";
+  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;
@@ -132,11 +133,22 @@ export function HomeHero({
   onEditProfileNavigate,
 }: HomeHeroProps) {
   const [openRow, setOpenRow] = useState<"history" | "flavor" | "origin" | null>(null);
-  const today = new Date();
-  const todayIndex = today.getDay();
-  const todayLabel = today.toLocaleDateString("en-US", {
-    weekday: "long", month: "long", day: "numeric",
-  });
+  const isBootstrapping = false;
+  const { posts, pinnedTopic, nextCursor, loading, loadingMore, error, loadMore } =
+    useCommunityFeed({ token, enabled: true });
+  
+  const { topics } = useWeeklyTopics();
+  
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  
+  const filteredPosts = selectedDate
+    ? posts.filter((p) => p.createdAt.startsWith(selectedDate))
+    : posts;
+    const today = new Date();
+    const todayIndex = today.getDay();
+    const todayLabel = today.toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric",
+    });
 
   const stories = useMemo(
     () =>
@@ -517,6 +529,25 @@ export function HomeHero({
                 token={token}
                 displayName={displayName}
                 onBack={onProfileNavigate} />
+            ) : centerView === "community" ? (
+              <>
+                <WeeklyStoryCircles
+                  topics={topics}
+                  selectedDate={selectedDate}
+                  onSelect={setSelectedDate}
+                />
+                <CommunityFeed
+                  posts={filteredPosts}
+                  pinnedTopic={selectedDate ? undefined : pinnedTopic}
+                  nextCursor={nextCursor}
+                  loading={loading}
+                  loadingMore={loadingMore}
+                  error={error}
+                  isLoggedIn={isLoggedIn}
+                  onLoadMore={loadMore}
+                  onLoginNavigate={onLoginNavigate}
+                />
+              </>
             ) : (
               <>
                 <div className="ig-stories" aria-label="Weekly special recipes">

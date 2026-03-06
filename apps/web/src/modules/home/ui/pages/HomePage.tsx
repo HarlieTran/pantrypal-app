@@ -10,7 +10,7 @@ type ExpiringPreviewItem = {
 };
 
 type HomePageProps = {
-  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile";
+  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;

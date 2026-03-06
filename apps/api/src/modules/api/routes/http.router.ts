@@ -403,6 +403,52 @@ if (method === "PATCH" && path === "/me/profile") {
     }
   }
 
+  if (method === "GET" && path === "/community/weekly-topics") {
+    try {
+      const { dynamo, COMMUNITY_TOPICS_TABLE } = await import("../../../common/db/dynamo.js");
+      const { QueryCommand } = await import("@aws-sdk/lib-dynamodb");
+
+      const results = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const date = d.toISOString().split("T")[0];
+
+        const result = await dynamo.send(
+          new QueryCommand({
+            TableName: COMMUNITY_TOPICS_TABLE,
+            IndexName: "gsi1-pinned-topics",
+            KeyConditionExpression: "isPinned = :pinned AND begins_with(createdAt, :date)",
+            ExpressionAttributeValues: {
+              ":pinned": "true",
+              ":date": date,
+            },
+            Limit: 1,
+          }),
+        );
+
+        const topic = result.Items?.[0];
+        if (topic) {
+          results.push({
+            topicId: topic.topicId,
+            title: topic.title,
+            imageUrl: topic.imageUrl ?? null,
+            createdAt: topic.createdAt,
+            date,
+          });
+        } else {
+          results.push({ topicId: null, title: null, imageUrl: null, createdAt: null, date });
+        }
+      }
+
+      // Return oldest → newest (index 0 = 6 days ago, index 6 = today)
+      return { statusCode: 200, body: { topics: results.reverse() } };
+    } catch (error) {
+      console.error("weekly topics error:", error);
+      return { statusCode: 500, body: { error: "Failed to load weekly topics" } };
+    }
+  }
+
   // GET /community — public feed (guest) or personalized feed (authenticated)
   if (method === "GET" && path.startsWith("/community")) {
     try {

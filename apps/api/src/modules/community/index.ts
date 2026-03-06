@@ -8,3 +8,4 @@ export type {
   CommunityComment,
   CommunityLike,
 } from "./model/community.types.js";
+export { createPantryPalSystemPost } from "./services/system.post.service.js";

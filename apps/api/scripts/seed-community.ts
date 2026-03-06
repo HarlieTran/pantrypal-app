@@ -89,8 +89,8 @@ function makePost(opts: {
 
 // ─── Find today's pinned topic ───────────────────────────────────────────────
 
-async function getTodayPinnedTopicId(): Promise<string | null> {
-  const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+async function getTodayPinnedTopic(): Promise<{ topicId: string; imageUrl: string | null; title: string } | null> {
+  const today = new Date().toISOString().split("T")[0];
 
   const result = await dynamo.send(
     new QueryCommand({
@@ -107,12 +107,16 @@ async function getTodayPinnedTopicId(): Promise<string | null> {
 
   const topic = result.Items?.[0];
   if (!topic) {
-    console.warn("⚠️  No pinned topic found for today. Topic-reply posts will be seeded as standalone.");
+    console.warn("⚠️  No pinned topic found for today.");
     return null;
   }
 
   console.log(`✅ Found today's pinned topic: ${topic.topicId} — "${topic.title}"`);
-  return topic.topicId as string;
+  return {
+    topicId: topic.topicId as string,
+    imageUrl: (topic.imageUrl as string) ?? null,
+    title: topic.title as string,
+  };
 }
 
 // ─── Post Definitions ────────────────────────────────────────────────────────
@@ -252,6 +256,43 @@ function buildPosts(pinnedTopicId: string | null) {
   ];
 }
 
+async function seedSystemPost(pinnedTopicId: string, imageUrl: string | null) {
+  const postId = randomUUID();
+  const d = new Date();
+  d.setHours(0, 1, 0, 0);
+  const createdAt = d.toISOString();
+  const sk = `${createdAt}#${postId}`;
+
+  await dynamo.send(
+    new PutCommand({
+      TableName: POSTS_TABLE,
+      Item: {
+        userId: "pantrypal-system",
+        sk,
+        gsi1pk: "ALL",
+        gsi1sk: sk,
+        postId,
+        displayName: "PantryPal",
+        avatarUrl: null,
+        caption: "Today's special is live! What do you know about this dish? Share your thoughts 🍽️",
+        imageUrl: imageUrl,
+        tags: ["daily-special"],
+        ingredients: [],
+        likeCount: 0,
+        commentCount: 0,
+        createdAt,
+        topicId: pinnedTopicId,
+        gsi2pk: pinnedTopicId,
+        gsi2sk: createdAt,
+        isSystemPost: true,
+      },
+    }),
+  );
+
+  console.log("  ✅ [PantryPal] System post seeded for today's topic");
+  return postId;
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -259,9 +300,13 @@ async function main() {
   console.log(`   Table : ${POSTS_TABLE}`);
   console.log(`   Region: ${REGION}\n`);
 
-  const pinnedTopicId = await getTodayPinnedTopicId();
-  const posts = buildPosts(pinnedTopicId);
+  const topic = await getTodayPinnedTopic();
 
+  if (topic) {
+    await seedSystemPost(topic.topicId, topic.imageUrl);
+  }
+
+  const posts = buildPosts(topic?.topicId ?? null);
   console.log(`📦 Seeding ${posts.length} posts...\n`);
 
   let success = 0;
@@ -284,14 +329,6 @@ async function main() {
   }
 
   console.log(`\n🏁 Done — ${success} seeded, ${failed} failed.\n`);
-
-  if (pinnedTopicId) {
-    console.log(`💡 Test personalized feed: GET /community (with auth token)`);
-    console.log(`💡 Test guest feed:        GET /community (no token)\n`);
-  } else {
-    console.log(`💡 Tip: Hit GET /home first to generate today's daily special + pinned topic,`);
-    console.log(`        then re-run this script to also seed topic replies.\n`);
-  }
 }
 
 main().catch((err) => {

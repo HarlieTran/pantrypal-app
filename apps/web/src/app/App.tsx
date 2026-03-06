@@ -10,13 +10,13 @@ import { useHomeAndPantryPreview } from "./application/useHomeAndPantryPreview";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8788";
 
-type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile" | "edit-profile";
+type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile" | "edit-profile" | "community";
 
 // Right panel state machine — all auth lives here
 export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "onboarding-q" | "onboarding-picks";
 
 export function App() {
-  const [view, setView] = useState<View>("home");
+  const [view, setView] = useState<View>("community");
   const [rightPanel, setRightPanel] = useState<RightPanel>("guest");
 
   const [email, setEmail] = useState("");
@@ -217,7 +217,7 @@ export function App() {
         : view === "recipes" ? "recipes" 
         : view === "profile" ? "profile"
         : view === "edit-profile" ? "edit-profile"
-        : "home"
+        : "community"
       }
       heroImageSrc={heroImageSrc}
       special={special}

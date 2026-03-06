@@ -4,6 +4,7 @@ import { prisma } from "../../../common/db/prisma.js";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getOrCreateTodayPinnedTopic } from "../../community/index.js";
+import { createPantryPalSystemPost } from "../../community/services/system.post.service.js";
 
 const BEDROCK_REGION = process.env.BEDROCK_REGION || process.env.AWS_REGION || "us-east-1";
 const BEDROCK_MODEL_ID =
@@ -247,15 +248,22 @@ export async function getOrCreateDailySpecial(locale = "global") {
 
   // Auto-create today's pinned community topic from the daily special
   try {
-    await getOrCreateTodayPinnedTopic({
+    const topic = await getOrCreateTodayPinnedTopic({
       dailySpecialId: saved.id,
       dishName: saved.dishName,
       imageUrl: hydrated?.imageUrl ?? null,
       description: saved.description ?? null,
     });
+  
+    await createPantryPalSystemPost({
+      topicId: topic.topicId,
+      dishName: saved.dishName,
+      description: saved.description ?? null,
+      imageUrl: hydrated?.imageUrl ?? null,
+      createdAt: new Date().toISOString(),
+    });
   } catch (err) {
-    // Non-fatal — log and continue
-    console.warn("Failed to create pinned community topic:", err);
+    console.warn("Failed to create pinned community topic or system post:", err);
   }
 
   return hydrated;
