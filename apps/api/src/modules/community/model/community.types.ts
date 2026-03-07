@@ -20,6 +20,8 @@ export type CommunityPost = {
   postId: string;
   gsi1pk: string;                      // always "ALL" — for global feed GSI
   gsi1sk: string;                      // createdAt#postId — for global feed sort
+  gsi2pk?: string;                     // topicId — for topic feed GSI
+  gsi2sk?: string;                     // createdAt — for topic feed sort
   topicId?: string;
   postType: PostType;
   imageS3Key?: string;

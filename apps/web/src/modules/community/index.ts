@@ -4,3 +4,4 @@ export type { CommunityPostView, CommunityTopic, CommunityFeedResponse } from ".
 export { useWeeklyTopics } from "./application/useWeeklyTopics";
 export type { WeeklyTopic } from "./infra/community.api";
 export { WeeklyStoryCircles } from "./ui/WeeklyStoryCircles";
+export { PostComposer } from "./ui/PostComposer";

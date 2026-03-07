@@ -25,7 +25,7 @@ import {
 } from "../../pantry/index.js";
 
 import { cookRecipeForUser, getRecipeSuggestionsForUser, getRecipeDetails } from "../../recipes/index.js";
-import { getPublicFeed, getPersonalizedFeed, getOrCreateTodayPinnedTopic } from "../../community/index.js";
+import { getPublicFeed, getPersonalizedFeed, getOrCreateTodayPinnedTopic, createPost } from "../../community/index.js";
 
 
 // Add Zod schemas
@@ -95,6 +95,18 @@ const updateProfileSchema = z.object({
 
 const communityFeedSchema = z.object({
   cursor: z.string().optional(),
+});
+
+const communityUploadUrlSchema = z.object({
+  filename: z.string().min(1),
+  contentType: z.string().min(1),
+});
+
+const createPostSchema = z.object({
+  caption: z.string().min(1).max(2000),
+  tags: z.array(z.string()).optional(),
+  topicId: z.string().optional(),
+  imageS3Key: z.string().optional(),
 });
 
 
@@ -448,6 +460,74 @@ if (method === "PATCH" && path === "/me/profile") {
       return { statusCode: 500, body: { error: "Failed to load weekly topics" } };
     }
   }
+
+  // POST /community/posts/upload-url
+if (method === "POST" && path === "/community/posts/upload-url") {
+  try {
+    const claims = await requireAuth({ headers: { authorization: authHeader } });
+    const parsed = communityUploadUrlSchema.parse(rawBody ? JSON.parse(rawBody) : {});
+
+    const { s3 } = await import("../../../common/storage/s3.js");
+    const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+    const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+    const { randomUUID } = await import("node:crypto");
+
+    const bucket = process.env.S3_BUCKET_COMMUNITY_POSTS || process.env.S3_BUCKET_DAILY_SPECIALS || "";
+    const ext = parsed.filename.split(".").pop() ?? "jpg";
+    const imageKey = `community-posts/${claims.sub}/${randomUUID()}.${ext}`;
+
+    const command = new PutObjectCommand({
+      Bucket: bucket,
+      Key: imageKey,
+      ContentType: parsed.contentType,
+    });
+
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 300 });
+    return { statusCode: 200, body: { uploadUrl, imageKey } };
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return { statusCode: 400, body: { error: "Invalid payload", details: error.flatten() } };
+    return { statusCode: 401, body: { error: "Unauthorized" } };
+  }
+}
+
+// POST /community/posts
+if (method === "POST" && path === "/community/posts") {
+  try {
+    const claims = await requireAuth({ headers: { authorization: authHeader } });
+    const parsed = createPostSchema.parse(rawBody ? JSON.parse(rawBody) : {});
+
+    const { prisma } = await import("../../../common/db/prisma.js");
+    const user = await prisma.userProfile.findUnique({
+      where: {
+        authProvider_authSubject: {
+          authProvider: "cognito",
+          authSubject: claims.sub,
+        },
+      },
+      select: { displayName: true, firstName: true },
+    });
+
+    const displayName =
+      user?.displayName || user?.firstName || "PantryPal User";
+
+    const post = await createPost({
+      userId: claims.sub,
+      displayName,
+      caption: parsed.caption,
+      tags: parsed.tags ?? [],
+      topicId: parsed.topicId,
+      imageS3Key: parsed.imageS3Key,
+    });
+
+    return { statusCode: 201, body: { post } };
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return { statusCode: 400, body: { error: "Invalid payload", details: error.flatten() } };
+    console.error("create post error:", error);
+    return { statusCode: 500, body: { error: "Failed to create post" } };
+  }
+}
 
   // GET /community — public feed (guest) or personalized feed (authenticated)
   if (method === "GET" && path.startsWith("/community")) {

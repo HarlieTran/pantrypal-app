@@ -1,21 +1,33 @@
-import { QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamo, COMMUNITY_POSTS_TABLE, COMMUNITY_LIKES_TABLE } from "../../../common/db/dynamo.js";
-import { getRecipeImageUrl } from "../../../common/storage/s3.js";
 import type {
   CommunityPost,
   CommunityPostView,
   CommunityFeedResponse,
 } from "../model/community.types.js";
+import { randomUUID } from "crypto";
+import { s3 } from "../../../common/storage/s3.js";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const FEED_PAGE_SIZE = 20;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const COMMUNITY_IMAGES_BUCKET =
+  process.env.S3_BUCKET_COMMUNITY_POSTS ||
+  process.env.S3_BUCKET_DAILY_SPECIALS ||
+  process.env.CURATED_RECIPES_BUCKET ||
+  "";
+
 async function resolveImageUrl(post: CommunityPost): Promise<string | undefined> {
   if (!post.imageS3Key) return undefined;
   try {
-    const url = await getRecipeImageUrl(post.imageS3Key);
-    return url ?? undefined;
+    const command = new GetObjectCommand({
+      Bucket: COMMUNITY_IMAGES_BUCKET,
+      Key: post.imageS3Key,
+    });
+    return await getSignedUrl(s3, command, { expiresIn: 3600 });
   } catch {
     return undefined;
   }
@@ -189,4 +201,57 @@ export async function getPersonalizedFeed(
     posts: postViews,
     nextCursor,
   };
+}
+
+export async function createPost(input: {
+  userId: string;
+  displayName: string;
+  caption: string;
+  tags: string[];
+  topicId?: string;
+  imageS3Key?: string;
+}): Promise<CommunityPostView> {
+  const postId = randomUUID();
+  const createdAt = new Date().toISOString();
+  const sk = `${createdAt}#${postId}`;
+
+  const item: CommunityPost = {
+    userId: input.userId,
+    sk,
+    gsi1pk: "ALL",
+    gsi1sk: sk,
+    postId,
+    postType: input.topicId ? "topic_reply" : "free",
+    caption: input.caption,
+    imageS3Key: input.imageS3Key,
+    tags: {
+      ingredients: input.tags,
+    },
+    likeCount: 0,
+    commentCount: 0,
+    authorDisplayName: input.displayName,
+    authorAvatarLabel: input.displayName
+      .split(" ")
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join(""),
+    createdAt,
+    updatedAt: createdAt,
+    ...(input.topicId
+      ? {
+          topicId: input.topicId,
+          gsi2pk: input.topicId,
+          gsi2sk: createdAt,
+        }
+      : {}),
+  };
+
+  await dynamo.send(
+    new PutCommand({
+      TableName: COMMUNITY_POSTS_TABLE,
+      Item: item,
+    }),
+  );
+
+  return toPostView(item);
 }

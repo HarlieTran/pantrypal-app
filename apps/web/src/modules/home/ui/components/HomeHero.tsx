@@ -5,7 +5,8 @@ import { OnboardingQuestionnaire, RecipePreferencePicker } from "../../../onboar
 import { PantryPage } from "../../../pantry";
 import { RecipesPage } from "../../../recipes";
 import { ProfilePage, EditProfilePage } from "../../../profile";
-import { CommunityFeed, useCommunityFeed, useWeeklyTopics, WeeklyStoryCircles } from "../../../community";
+import { CommunityFeed, useCommunityFeed, useWeeklyTopics, WeeklyStoryCircles, PostComposer } from "../../../community";
+
 
 type ExpiringPreviewItem = {
   name: string;
@@ -134,7 +135,7 @@ export function HomeHero({
 }: HomeHeroProps) {
   const [openRow, setOpenRow] = useState<"history" | "flavor" | "origin" | null>(null);
   const isBootstrapping = false;
-  const { posts, pinnedTopic, nextCursor, loading, loadingMore, error, loadMore } =
+  const { posts, pinnedTopic, nextCursor, loading, loadingMore, error, loadMore, refresh } =
     useCommunityFeed({ token, enabled: true });
   
   const { topics } = useWeeklyTopics();
@@ -159,6 +160,8 @@ export function HomeHero({
       })),
     [special?.dishName, todayIndex],
   );
+
+  const [showComposer, setShowComposer] = useState(false);
 
   // ─── Right panel state machine ──────────────────────────────────────────────
 
@@ -546,6 +549,7 @@ export function HomeHero({
                   isLoggedIn={isLoggedIn}
                   onLoadMore={loadMore}
                   onLoginNavigate={onLoginNavigate}
+                  onCreatePost={isLoggedIn ? () => setShowComposer(true) : undefined}
                 />
               </>
             ) : (
@@ -622,6 +626,77 @@ export function HomeHero({
           </aside>
         </div>
       </div>
+
+      {/* Post Composer Modal */}
+      {showComposer && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setShowComposer(false)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.5)",
+              zIndex: 100,
+            }}
+          />
+
+          {/* Modal */}
+          <div style={{
+            position: "fixed",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "min(540px, 95vw)",
+            maxHeight: "90vh",
+            overflowY: "auto",
+            background: "#fff",
+            borderRadius: "16px",
+            zIndex: 101,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
+          }}>
+            {/* Modal header */}
+            <div style={{
+              padding: "16px",
+              borderBottom: "1px solid #f0f0f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              position: "sticky",
+              top: 0,
+              background: "#fff",
+              borderRadius: "16px 16px 0 0",
+              zIndex: 1,
+            }}>
+              <span style={{ fontWeight: 700, fontSize: "15px" }}>New Post</span>
+              <button
+                onClick={() => setShowComposer(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "20px",
+                  cursor: "pointer",
+                  color: "#999",
+                  lineHeight: 1,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <PostComposer
+              token={token}
+              pinnedTopic={pinnedTopic}
+              onPostCreated={(post) => {
+                setShowComposer(false);
+                refresh();
+              }}
+              onCancel={() => setShowComposer(false)}
+            />
+          </div>
+        </>
+      )}
+
     </section>
   );
 }

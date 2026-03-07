@@ -13,7 +13,8 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-function avatarInitials(name: string): string {
+function avatarInitials(name: string | undefined): string {
+  if (!name) return "?";
   return name.split(" ").slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 }
 
@@ -110,7 +111,7 @@ function PostCard({ post, showThreadLine = true }: { post: CommunityPostView; sh
           fontWeight: 700,
           flexShrink: 0,
         }}>
-          {isSystem ? "✦" : avatarInitials(post.displayName)}
+          {isSystem ? "✦" : avatarInitials(post.authorDisplayName ?? post.displayName)}
         </div>
         {/* Thread line */}
         {showThreadLine && (
@@ -124,7 +125,7 @@ function PostCard({ post, showThreadLine = true }: { post: CommunityPostView; sh
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
           <span style={{ fontSize: "14px", fontWeight: 700, color: "#262626" }}>
-            {post.displayName}
+            {post.authorDisplayName ?? post.displayName}
           </span>
           {isSystem && (
             <span style={{
@@ -169,19 +170,29 @@ function PostCard({ post, showThreadLine = true }: { post: CommunityPostView; sh
         )}
 
         {/* Tags */}
-        {post.tags.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
-            {post.tags.map((tag) => (
-              <span key={tag} style={{
-                fontSize: "12px",
-                fontWeight: 600,
-                color: "#0095f6",
-              }}>
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {(() => {
+          const flatTags = Array.isArray(post.tags)
+            ? post.tags
+            : [
+                ...((post.tags as any)?.ingredients ?? []),
+                ...((post.tags as any)?.dietTags ?? []),
+                (post.tags as any)?.cuisine,
+              ].filter(Boolean) as string[];
+
+          return flatTags.length > 0 ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+              {flatTags.map((tag) => (
+                <span key={tag} style={{
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#0095f6",
+                }}>
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          ) : null;
+        })()}
 
         {/* Footer — likes + comments */}
         <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
@@ -257,10 +268,12 @@ type CommunityFeedProps = {
   isLoggedIn: boolean;
   onLoadMore: () => void;
   onLoginNavigate: () => void;
+  onCreatePost?: () => void;
 };
 
 export function CommunityFeed({
   posts,
+  pinnedTopic,
   loading,
   loadingMore,
   error,
@@ -268,6 +281,7 @@ export function CommunityFeed({
   isLoggedIn,
   onLoadMore,
   onLoginNavigate,
+  onCreatePost,
 }: CommunityFeedProps) {
   if (loading) {
     return (
@@ -287,6 +301,36 @@ export function CommunityFeed({
 
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
+
+      {/* Create post trigger — authenticated only */}
+      {isLoggedIn && onCreatePost && (
+        <button
+          onClick={onCreatePost}
+          style={{
+            width: "100%",
+            padding: "12px 16px",
+            border: "1px solid #f0f0f0",
+            borderRadius: "12px",
+            background: "#fafafa",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            cursor: "pointer",
+            marginBottom: "8px",
+          }}
+        >
+          <div style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "50%",
+            background: "#e8e8e8",
+            flexShrink: 0,
+          }} />
+          <span style={{ fontSize: "14px", color: "#aaa", textAlign: "left" }}>
+            Share something from your kitchen...
+          </span>
+        </button>
+      )}
 
       {/* Guest CTA */}
       {!isLoggedIn && (

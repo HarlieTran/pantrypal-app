@@ -3,11 +3,12 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8788";
 export type CommunityPostView = {
   postId: string;
   userId: string;
-  displayName: string;
+  authorDisplayName?: string;
+  displayName?: string;
   avatarUrl: string | null;
   caption: string;
   imageUrl: string | null;
-  tags: string[];
+  tags: string[] | { ingredients?: string[]; dietTags?: string[]; cuisine?: string };
   ingredients: string[];
   likeCount: number;
   commentCount: number;
@@ -58,4 +59,46 @@ export async function fetchWeeklyTopics(): Promise<WeeklyTopic[]> {
   if (!res.ok) throw new Error(`Failed to load weekly topics (${res.status})`);
   const data = await res.json();
   return data.topics;
+}
+
+export async function getUploadUrl(
+  token: string,
+  filename: string,
+  contentType: string,
+): Promise<{ uploadUrl: string; imageKey: string }> {
+  const res = await fetch(`${API_BASE}/community/posts/upload-url`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ filename, contentType }),
+  });
+
+  if (!res.ok) throw new Error("Failed to get upload URL");
+  const data = await res.json();
+  return data as { uploadUrl: string; imageKey: string };
+}
+
+export async function createPost(
+  token: string,
+  payload: {
+    caption: string;
+    tags?: string[];
+    topicId?: string;
+    imageS3Key?: string;
+  },
+): Promise<CommunityPostView> {
+  const res = await fetch(`${API_BASE}/community/posts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) throw new Error("Failed to create post");
+  const data = await res.json();
+  return data.post as CommunityPostView;
 }
