@@ -547,6 +547,7 @@ export function HomeHero({
                   loadingMore={loadingMore}
                   error={error}
                   isLoggedIn={isLoggedIn}
+                  token={token}
                   onLoadMore={loadMore}
                   onLoginNavigate={onLoginNavigate}
                   onCreatePost={isLoggedIn ? () => setShowComposer(true) : undefined}

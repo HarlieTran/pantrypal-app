@@ -1,4 +1,5 @@
 import type { CommunityPostView, CommunityTopic } from "../infra/community.api";
+import { togglePostLike } from "../infra/community.api";
 import { useState } from "react";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -84,7 +85,38 @@ function groupPostsIntoFeed(posts: CommunityPostView[]): FeedItem[] {
 
 // ─── Post Card ────────────────────────────────────────────────────────────────
 
-function PostCard({ post, showThreadLine = true }: { post: CommunityPostView; showThreadLine?: boolean }) {
+function PostCard({ post, showThreadLine = true, token, isLoggedIn }: {
+  post: CommunityPostView;
+  showThreadLine?: boolean;
+  token?: string;
+  isLoggedIn?: boolean;
+}) {
+  const [liked, setLiked] = useState(post.isLikedByCurrentUser ?? false);
+  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [liking, setLiking] = useState(false);
+
+  async function handleLike() {
+    if (!token || !isLoggedIn || liking) return;
+    setLiking(true);
+
+    // Optimistic update
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikeCount((c) => c + (wasLiked ? -1 : 1));
+
+    try {
+      const result = await togglePostLike(token, post.postId, post.userId);
+      setLiked(result.liked);
+      setLikeCount(result.likeCount);
+    } catch {
+      // Revert on failure
+      setLiked(wasLiked);
+      setLikeCount((c) => c + (wasLiked ? 1 : -1));
+    } finally {
+      setLiking(false);
+    }
+  }
+
   const isSystem = (post as any).isSystemPost === true || post.userId === "pantrypal-system";
 
   return (
@@ -196,8 +228,23 @@ function PostCard({ post, showThreadLine = true }: { post: CommunityPostView; sh
 
         {/* Footer — likes + comments */}
         <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
-          <button style={{ fontSize: "13px", color: "#737373", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "4px" }}>
-            ♥ <span>{post.likeCount}</span>
+          <button
+            onClick={handleLike}
+            disabled={!isLoggedIn || liking}
+            style={{
+              fontSize: "13px",
+              color: liked ? "#e53935" : "#737373",
+              background: "none",
+              border: "none",
+              cursor: isLoggedIn ? "pointer" : "default",
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              transition: "color 0.15s",
+            }}
+          >
+            {liked ? "♥" : "♡"} <span>{likeCount}</span>
           </button>
           <button style={{ fontSize: "13px", color: "#737373", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "4px" }}>
             💬 <span>{post.commentCount}</span>
@@ -210,7 +257,11 @@ function PostCard({ post, showThreadLine = true }: { post: CommunityPostView; sh
 
 // ─── Thread Group ─────────────────────────────────────────────────────────────
 
-function ThreadGroupCard({ group }: { group: ThreadGroup }) {
+function ThreadGroupCard({ group, token, isLoggedIn }: {
+  group: ThreadGroup;
+  token?: string;
+  isLoggedIn?: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
   const visibleReplies = expanded ? group.replies : group.replies.slice(0, 2);
 
@@ -218,7 +269,11 @@ function ThreadGroupCard({ group }: { group: ThreadGroup }) {
     <div style={{ borderBottom: "1px solid #efefef", paddingBottom: "8px" }}>
       {/* Root post — clickable to expand */}
       <div onClick={() => setExpanded((v) => !v)} style={{ cursor: "pointer" }}>
-        <PostCard post={group.root} showThreadLine={group.replies.length > 0} />
+        <PostCard 
+          post={group.root} 
+          showThreadLine={group.replies.length > 0} 
+          token={token} 
+          isLoggedIn={isLoggedIn} />
       </div>
 
       {/* Replies */}
@@ -227,6 +282,8 @@ function ThreadGroupCard({ group }: { group: ThreadGroup }) {
           <PostCard
             post={reply}
             showThreadLine={i < visibleReplies.length - 1}
+            token={token} 
+            isLoggedIn={isLoggedIn}
           />
         </div>
       ))}
@@ -266,6 +323,7 @@ type CommunityFeedProps = {
   error: string;
   nextCursor: string | null;
   isLoggedIn: boolean;
+  token?: string;
   onLoadMore: () => void;
   onLoginNavigate: () => void;
   onCreatePost?: () => void;
@@ -279,6 +337,7 @@ export function CommunityFeed({
   error,
   nextCursor,
   isLoggedIn,
+  token,
   onLoadMore,
   onLoginNavigate,
   onCreatePost,
@@ -359,9 +418,17 @@ export function CommunityFeed({
       ) : (
         groupPostsIntoFeed(posts).map((item) =>
           item.kind === "thread" ? (
-            <ThreadGroupCard key={item.group.root.postId} group={item.group} />
+            <ThreadGroupCard 
+              key={item.group.root.postId} 
+              group={item.group}
+              token={token}
+              isLoggedIn={isLoggedIn} />
           ) : (
-            <PostCard key={item.post.postId} post={item.post} />
+            <PostCard 
+              key={item.post.postId} 
+              post={item.post} 
+              token={token} 
+              isLoggedIn={isLoggedIn} />
           )
         )
       )}

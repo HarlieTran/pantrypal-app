@@ -25,7 +25,7 @@ import {
 } from "../../pantry/index.js";
 
 import { cookRecipeForUser, getRecipeSuggestionsForUser, getRecipeDetails } from "../../recipes/index.js";
-import { getPublicFeed, getPersonalizedFeed, getOrCreateTodayPinnedTopic, createPost } from "../../community/index.js";
+import { getPublicFeed, getPersonalizedFeed, getOrCreateTodayPinnedTopic, createPost, toggleLike } from "../../community/index.js";
 
 
 // Add Zod schemas
@@ -107,6 +107,11 @@ const createPostSchema = z.object({
   tags: z.array(z.string()).optional(),
   topicId: z.string().optional(),
   imageS3Key: z.string().optional(),
+});
+
+const toggleLikeSchema = z.object({
+  postId: z.string().min(1),
+  postUserId: z.string().min(1),
 });
 
 
@@ -526,6 +531,20 @@ if (method === "POST" && path === "/community/posts") {
       return { statusCode: 400, body: { error: "Invalid payload", details: error.flatten() } };
     console.error("create post error:", error);
     return { statusCode: 500, body: { error: "Failed to create post" } };
+  }
+}
+
+// POST /community/posts/:postId/like
+if (method === "POST" && path.match(/^\/community\/posts\/[^/]+\/like$/)) {
+  try {
+    const claims = await requireAuth({ headers: { authorization: authHeader } });
+    const parsed = toggleLikeSchema.parse(rawBody ? JSON.parse(rawBody) : {});
+    const result = await toggleLike(claims.sub, parsed.postId, parsed.postUserId);
+    return { statusCode: 200, body: result };
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      return { statusCode: 400, body: { error: "Invalid payload", details: error.flatten() } };
+    return { statusCode: 401, body: { error: "Unauthorized" } };
   }
 }
 

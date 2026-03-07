@@ -14,6 +14,7 @@ export type CommunityPostView = {
   commentCount: number;
   createdAt: string;
   topicId?: string;
+  isLikedByCurrentUser?: boolean;
 };
 
 export type CommunityTopic = {
@@ -101,4 +102,22 @@ export async function createPost(
   if (!res.ok) throw new Error("Failed to create post");
   const data = await res.json();
   return data.post as CommunityPostView;
+}
+
+export async function togglePostLike(
+  token: string,
+  postId: string,
+  postUserId: string,
+): Promise<{ liked: boolean; likeCount: number }> {
+  const res = await fetch(`${API_BASE}/community/posts/${postId}/like`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ postId, postUserId }),
+  });
+
+  if (!res.ok) throw new Error("Failed to toggle like");
+  return res.json();
 }

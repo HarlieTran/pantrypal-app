@@ -9,3 +9,4 @@ export type {
   CommunityLike,
 } from "./model/community.types.js";
 export { createPantryPalSystemPost } from "./services/system.post.service.js";
+export { toggleLike } from "./services/like.service.js";
