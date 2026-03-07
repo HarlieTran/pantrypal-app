@@ -1,4 +1,5 @@
 import { prisma } from "../../../common/db/prisma.js";
+import type { AuthClaims } from "../../../common/auth/jwt.js";
 
 const AUTH_PROVIDER = "cognito";
 
@@ -9,6 +10,13 @@ type UpdateUserProfileInput = {
   allergies?: string[];
   disliked?: string;
   notes?: string;
+};
+
+type FeedPreferences = {
+  likes: string[];
+  dislikes: string[];
+  dietSignals: string[];
+  allergies: string[];
 };
 
 function toOptionValue(value: string) {
@@ -38,6 +46,76 @@ function pickQuestion(
     ?? questions.find((q) =>
       labelIncludes.some((term) => q.label.toLowerCase().includes(term.toLowerCase())),
     );
+}
+
+export async function upsertUserProfileFromClaims(claims: AuthClaims) {
+  const sub = claims.sub;
+  const email = claims.email ?? "";
+  const firstName = claims.given_name?.trim() || null;
+  const lastName = claims.family_name?.trim() || null;
+  const defaultDisplayName = firstName || null;
+
+  const profile = await prisma.userProfile.upsert({
+    where: { authProvider_authSubject: { authProvider: AUTH_PROVIDER, authSubject: sub } },
+    update: { email, firstName, lastName },
+    create: { authProvider: AUTH_PROVIDER, authSubject: sub, email, firstName, lastName, displayName: defaultDisplayName },
+  });
+
+  if (!profile.displayName && defaultDisplayName) {
+    return prisma.userProfile.update({ where: { id: profile.id }, data: { displayName: defaultDisplayName } });
+  }
+  return profile;
+}
+
+export async function getUserBySubject(sub: string) {
+  return prisma.userProfile.findUnique({
+    where: { authProvider_authSubject: { authProvider: AUTH_PROVIDER, authSubject: sub } },
+  });
+}
+
+export async function getUserProfileIdBySubject(sub: string): Promise<string | null> {
+  const user = await prisma.userProfile.findUnique({
+    where: { authProvider_authSubject: { authProvider: AUTH_PROVIDER, authSubject: sub } },
+    select: { id: true },
+  });
+  return user?.id ?? null;
+}
+
+export async function getUserDisplayNameBySubject(sub: string): Promise<string | null> {
+  const user = await prisma.userProfile.findUnique({
+    where: { authProvider_authSubject: { authProvider: AUTH_PROVIDER, authSubject: sub } },
+    select: { displayName: true, firstName: true },
+  });
+  if (!user) return null;
+  return user.displayName || user.firstName || "PantryPal User";
+}
+
+export async function getUserFeedPreferencesBySubject(sub: string): Promise<FeedPreferences | null> {
+  const user = await prisma.userProfile.findUnique({
+    where: { authProvider_authSubject: { authProvider: AUTH_PROVIDER, authSubject: sub } },
+    include: {
+      preferenceProfile: true,
+      answers: {
+        include: {
+          question: { select: { key: true } },
+          option: { select: { value: true } },
+        },
+      },
+    },
+  });
+
+  if (!user?.preferenceProfile) return null;
+
+  const allergyAnswers = user.answers
+    .filter((a) => a.question.key === "allergies" && a.option)
+    .map((a) => a.option!.value);
+
+  return {
+    likes: user.preferenceProfile.likes as string[],
+    dislikes: user.preferenceProfile.dislikes as string[],
+    dietSignals: user.preferenceProfile.dietSignals as string[],
+    allergies: allergyAnswers,
+  };
 }
 
 export async function getUserProfile(sub: string) {

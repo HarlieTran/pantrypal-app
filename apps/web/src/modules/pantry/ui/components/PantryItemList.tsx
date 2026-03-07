@@ -1,13 +1,11 @@
 import { useState } from "react";
+import { INGREDIENT_CATEGORIES } from "@pantrypal/shared-types";
 import type { PantryItem, PantryItemCategory, ExpiryStatus } from "../../model/pantry.types";
 import { CATEGORY_EMOJI } from "../../model/pantry.types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORY_ORDER: PantryItemCategory[] = [
-  "produce", "dairy", "meat", "seafood", "grains",
-  "spices", "condiments", "frozen", "beverages", "snacks", "other",
-];
+const CATEGORY_ORDER: PantryItemCategory[] = [...INGREDIENT_CATEGORIES];
 
 const CATEGORY_LABEL: Record<PantryItemCategory, string> = {
   produce: "Produce",

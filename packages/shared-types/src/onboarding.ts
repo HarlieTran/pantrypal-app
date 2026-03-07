@@ -1,4 +1,4 @@
-export type QuestionType = "SINGLE_CHOICE" | "MULTI_CHOICE" | "FREE_TEXT";
+import type { QuestionType } from "./enums.js";
 
 export type OnboardingQuestionOption = {
   id: string;

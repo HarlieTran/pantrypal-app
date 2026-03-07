@@ -1,4 +1,5 @@
 export * from "./services/pantry.service.js";
+export { handlePantryRoute } from "./routes/pantry.router.js";
 export type {
   MatchedIngredient,
   PantryItem,

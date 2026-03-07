@@ -4,4 +4,5 @@ export interface UserProfile {
   displayName?: string;
 }
 
-export * from "./onboarding";
+export * from "./enums.js";
+export * from "./onboarding.js";

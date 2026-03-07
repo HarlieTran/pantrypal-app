@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { QUESTION_TYPES } from "@pantrypal/shared-types";
 import type { OnboardingAnswerInput, OnboardingQuestion } from "@pantrypal/shared-types";
 import { completeOnboarding, getOnboardingQuestions, saveAnswers } from "../../infra/onboarding.api";
 
@@ -53,7 +54,7 @@ export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
   // Only show the two main multi-choice questions inline (allergies + diet)
   // Free-text children shown as compact inputs below each parent
   const mainQuestions = useMemo(
-    () => questions.filter((q) => q.type !== "FREE_TEXT" || !questions.some((p) => q.key.startsWith(p.key + "_"))),
+    () => questions.filter((q) => q.type !== QUESTION_TYPES.FREE_TEXT || !questions.some((p) => q.key.startsWith(p.key + "_"))),
     [questions]
   );
 
@@ -64,7 +65,7 @@ export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
       const payload: OnboardingAnswerInput[] = questions
         .map((q) => {
           const a = answers[q.key] ?? { optionValues: [], answerText: "" };
-          if (q.type === "FREE_TEXT") return { questionKey: q.key, answerText: a.answerText.trim() };
+          if (q.type === QUESTION_TYPES.FREE_TEXT) return { questionKey: q.key, answerText: a.answerText.trim() };
           return { questionKey: q.key, optionValues: a.optionValues };
         })
         .filter((item) => ("optionValues" in item ? (item.optionValues?.length ?? 0) > 0 : Boolean(item.answerText?.trim())));
@@ -104,7 +105,7 @@ export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
                 {q.label}
               </p>
 
-              {q.type === "FREE_TEXT" && (
+              {q.type === QUESTION_TYPES.FREE_TEXT && (
                 <textarea
                   rows={2}
                   value={a.answerText}
@@ -114,7 +115,7 @@ export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
                 />
               )}
 
-              {(q.type === "MULTI_CHOICE" || q.type === "SINGLE_CHOICE") && (
+              {(q.type === QUESTION_TYPES.MULTI_CHOICE || q.type === QUESTION_TYPES.SINGLE_CHOICE) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                   {q.options.map((opt) => {
                     const selected = a.optionValues.includes(opt.value);

@@ -11,3 +11,4 @@ export type {
 export { createPantryPalSystemPost } from "./services/system.post.service.js";
 export { toggleLike } from "./services/like.service.js";
 export { getComments, addComment, deleteComment, toggleCommentLike } from "./services/comment.service.js";
+export { handleCommunityRoute } from "./routes/community.router.js";

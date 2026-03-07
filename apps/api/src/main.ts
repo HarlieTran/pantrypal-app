@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createServer } from "node:http";
-import { handleApiRoute } from "./modules/api/index.js";
+import { dispatchApiRoute } from "./modules/api/index.js";
 
 const port = Number(process.env.PORT || 8788);
 const frontendOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
@@ -32,7 +32,7 @@ const server = createServer(async (req, res) => {
     req.method === "PUT" || req.method === "POST" || req.method === "PATCH"
       ? await readBody(req)
       : undefined;
-  const response = await handleApiRoute(req.method ?? "GET", req.url, req.headers.authorization, rawBody);
+  const response = await dispatchApiRoute(req.method ?? "GET", req.url, req.headers.authorization, rawBody);
   return sendJson(res, response.statusCode, response.body);
 });
 

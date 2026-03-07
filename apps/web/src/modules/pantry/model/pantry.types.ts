@@ -1,15 +1,6 @@
-export type PantryItemCategory =
-  | "produce"
-  | "dairy"
-  | "meat"
-  | "seafood"
-  | "grains"
-  | "spices"
-  | "condiments"
-  | "frozen"
-  | "beverages"
-  | "snacks"
-  | "other";
+import type { IngredientCategory } from "@pantrypal/shared-types";
+
+export type PantryItemCategory = IngredientCategory;
 
 export type ExpiryStatus = "fresh" | "expiring_soon" | "expired" | "no_date";
 

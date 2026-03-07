@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { handleApiRoute } from "./modules/api/index.js";
+import { dispatchApiRoute } from "./modules/api/index.js";
 
 type ApiGatewayEvent = {
   rawPath: string;
@@ -40,7 +40,7 @@ export async function handler(event: ApiGatewayEvent) {
     };
   }
 
-  const response = await handleApiRoute(method, path, authHeader, rawBody);
+  const response = await dispatchApiRoute(method, path, authHeader, rawBody);
 
   return {
     statusCode: response.statusCode,

@@ -1,4 +1,4 @@
-import type { IngredientCategory } from "@prisma/client";
+import type { IngredientCategory } from "@pantrypal/shared-types";
 
 export type PantryItemCategory = IngredientCategory;
 

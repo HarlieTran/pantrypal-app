@@ -4,9 +4,11 @@ import {
   DeleteCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { INGREDIENT_CATEGORIES } from "@pantrypal/shared-types";
 import { dynamo, PANTRY_TABLE } from "../../../common/db/dynamo.js";
 import { prisma } from "../../../common/db/prisma.js";
 import { matchIngredient } from "../../ingredients/index.js";
+import { getUserProfileIdBySubject } from "../../users/index.js";
 import { randomUUID } from "node:crypto";
 import type {
   PantryItem,
@@ -23,6 +25,7 @@ const PANTRY_IMAGES_BUCKET = process.env.PANTRY_IMAGES_BUCKET || process.env.CUR
 const PANTRY_IMAGES_PREFIX = "pantry-uploads";
 const BEDROCK_MODEL = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
 const bedrockClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-2" });
+const CATEGORY_PROMPT_LIST = INGREDIENT_CATEGORIES.join("|");
 
 function stripCodeFence(text: string) {
   return text
@@ -63,16 +66,8 @@ function withExpiryStatus(item: PantryItem): PantryItemWithStatus {
 
 async function syncPantryMeta(userId: string) {
   try {    
-    const user = await prisma.userProfile.findUnique({
-      where: {
-        authProvider_authSubject: {
-          authProvider: "cognito",
-          authSubject: userId,
-        },
-      },
-    });
-
-    if (!user) return;
+    const profileId = await getUserProfileIdBySubject(userId);
+    if (!profileId) return;
 
     const result = await dynamo.send(
       new QueryCommand({
@@ -93,9 +88,9 @@ async function syncPantryMeta(userId: string) {
     }).length;
 
     await prisma.pantryMeta.upsert({
-      where: { userId: user.id },
+      where: { userId: profileId },
       update: { itemCount: items.length, expiringCount, lastUpdated: new Date() },
-      create: { userId: user.id, itemCount: items.length, expiringCount, lastUpdated: new Date() },
+      create: { userId: profileId, itemCount: items.length, expiringCount, lastUpdated: new Date() },
     });
   } catch (e) {
     console.warn("pantry meta sync failed:", e);
@@ -128,17 +123,9 @@ export async function getPantryItems(userId: string): Promise<PantryItemWithStat
 }
 
 export async function getPantryMeta(userId: string) {
-  const user = await prisma.userProfile.findUnique({
-    where: {
-      authProvider_authSubject: {
-        authProvider: "cognito",
-        authSubject: userId,
-      },
-    },
-  });
-
-  if (!user) return null;
-  return prisma.pantryMeta.findUnique({ where: { userId: user.id } });
+  const profileId = await getUserProfileIdBySubject(userId);
+  if (!profileId) return null;
+  return prisma.pantryMeta.findUnique({ where: { userId: profileId } });
 }
 
 // ─── Create ───────────────────────────────────────────────────────────────────
@@ -158,7 +145,7 @@ export async function addPantryItem(
     rawName: data.rawName,
     quantity: data.quantity,
     unit: data.unit,
-    category: "other",
+    category: INGREDIENT_CATEGORIES[INGREDIENT_CATEGORIES.length - 1],
   } as ParsedIngredient);
 
   const now = new Date().toISOString();
@@ -301,7 +288,7 @@ export async function parseImageForIngredients(
     "Analyze this image (receipt, grocery photo, pantry shelf, or spice rack) and extract a clean normalized grocery list in JSON format.",
     "## Output Requirements",
     "- Return ONLY valid JSON without markdown, preamble, or explanations.",
-    '- Follow this schema exactly: {"items":[{"name":"string","quantity":1,"unit":"string","category":"produce|dairy|meat|seafood|grains|spices|condiments|frozen|beverages|snacks|other"}]}',
+    `- Follow this schema exactly: {"items":[{"name":"string","quantity":1,"unit":"string","category":"${CATEGORY_PROMPT_LIST}"}]}`,
     "## Normalization Rules",
     "1) Include only food/grocery items. Exclude taxes, totals, store info, coupons, phone numbers.",
     '2) Clean item names. Example: "APPL GALA ORG 2.99" -> "Organic Gala Apples".',
@@ -358,7 +345,7 @@ export async function parseImageForIngredients(
       rawName: typeof item.name === "string" ? item.name.trim() : "",
       quantity: typeof item.quantity === "number" ? item.quantity : 1,
       unit: typeof item.unit === "string" ? item.unit.trim() : "pcs",
-      category: (item.category ?? "other") as ParsedIngredient["category"],
+      category: (item.category ?? INGREDIENT_CATEGORIES[INGREDIENT_CATEGORIES.length - 1]) as ParsedIngredient["category"],
     }))
     .filter((item) => item.rawName.length > 0);
 }

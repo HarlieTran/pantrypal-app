@@ -1,11 +1,13 @@
 import { prisma } from "../../../common/db/prisma.js";
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
+import { INGREDIENT_CATEGORIES, type IngredientCategory } from "@pantrypal/shared-types";
 import type { MatchedIngredient, ParsedIngredient } from "../../pantry/index.js";
 
 const bedrockClient = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || "us-east-2",
 });
 const BEDROCK_MODEL = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
+const CATEGORY_PROMPT_LIST = INGREDIENT_CATEGORIES.join("|");
 
 function stripCodeFence(text: string) {
   return text
@@ -59,13 +61,13 @@ async function matchAlias(rawName: string) {
 
 async function matchViaAI(rawName: string): Promise<{
   canonicalName: string;
-  category: string;
+  category: IngredientCategory;
 } | null> {
   const prompt = [
     "You are a food ingredient normalization assistant.",
     `Given this ingredient name: "${rawName}"`,
     "Return ONLY valid JSON with this exact schema:",
-    '{"canonicalName":"string","category":"produce|dairy|meat|seafood|grains|spices|condiments|frozen|beverages|snacks|other"}',
+    `{"canonicalName":"string","category":"${CATEGORY_PROMPT_LIST}"}`,
     "Rules:",
     "- canonicalName must be a simple, common English ingredient name (e.g. Tomato, Chicken Breast, Olive Oil).",
     "- Choose the most appropriate category.",
