@@ -5,9 +5,10 @@ type Params = {
   givenName: string;
   familyName: string;
   isLoggedIn: boolean;
+  sub?: string;
 };
 
-export function useIdentity({ email, givenName, familyName, isLoggedIn }: Params) {
+export function useIdentity({ email, givenName, familyName, isLoggedIn, sub }: Params) {
   const displayName = useMemo(() => {
     const full = `${givenName} ${familyName}`.trim();
     if (full) return full;
@@ -26,5 +27,5 @@ export function useIdentity({ email, givenName, familyName, isLoggedIn }: Params
     return (source[0] ?? "P").toUpperCase();
   }, [accountId, displayName]);
 
-  return { displayName, accountId, avatarLabel };
+  return { displayName, accountId, avatarLabel, sub };
 }

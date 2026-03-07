@@ -10,3 +10,4 @@ export type {
 } from "./model/community.types.js";
 export { createPantryPalSystemPost } from "./services/system.post.service.js";
 export { toggleLike } from "./services/like.service.js";
+export { getComments, addComment, deleteComment, toggleCommentLike } from "./services/comment.service.js";

@@ -19,6 +19,7 @@ type HomePageProps = {
   accountId: string;
   displayName: string;
   avatarLabel: string;
+  sub?: string;
   expiringItems: ExpiringPreviewItem[];
   preferenceProfile: PreferenceProfile | null;
   rightPanel: RightPanel;

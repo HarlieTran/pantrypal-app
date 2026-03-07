@@ -1,6 +1,7 @@
 import type { CommunityPostView, CommunityTopic } from "../infra/community.api";
 import { togglePostLike } from "../infra/community.api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { CommentSection } from "./CommentSection";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -85,15 +86,22 @@ function groupPostsIntoFeed(posts: CommunityPostView[]): FeedItem[] {
 
 // ─── Post Card ────────────────────────────────────────────────────────────────
 
-function PostCard({ post, showThreadLine = true, token, isLoggedIn }: {
+function PostCard({ post, showThreadLine = true, token, isLoggedIn, currentUserId }: {
   post: CommunityPostView;
   showThreadLine?: boolean;
   token?: string;
   isLoggedIn?: boolean;
+  currentUserId?: string;
 }) {
   const [liked, setLiked] = useState(post.isLikedByCurrentUser ?? false);
   const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
   const [liking, setLiking] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
+  useEffect(() => {
+    setCommentCount(post.commentCount ?? 0);
+  }, [post.postId, post.commentCount]);
 
   async function handleLike() {
     if (!token || !isLoggedIn || liking) return;
@@ -246,10 +254,36 @@ function PostCard({ post, showThreadLine = true, token, isLoggedIn }: {
           >
             {liked ? "♥" : "♡"} <span>{likeCount}</span>
           </button>
-          <button style={{ fontSize: "13px", color: "#737373", background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: "4px" }}>
-            💬 <span>{post.commentCount}</span>
+          <button
+            onClick={() => setCommentsOpen((prev) => !prev)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 20,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              color: commentsOpen ? "#0095f6" : "#555",
+            }}
+          >
+            💬
+            {commentCount > 0 && (
+              <span style={{ fontSize: 13, color: "#999" }}>{commentCount}</span>
+            )}
           </button>
         </div>
+        
+        {/* Comments */}
+        <CommentSection
+          postId={post.postId}
+          postUserId={post.userId}
+          token={token}
+          currentUserId={currentUserId}
+          isOpen={commentsOpen}
+          onToggle={() => setCommentsOpen((prev) => !prev)}
+          onCountChange={setCommentCount}
+        />
       </div>
     </article>
   );
@@ -257,10 +291,11 @@ function PostCard({ post, showThreadLine = true, token, isLoggedIn }: {
 
 // ─── Thread Group ─────────────────────────────────────────────────────────────
 
-function ThreadGroupCard({ group, token, isLoggedIn }: {
+function ThreadGroupCard({ group, token, isLoggedIn, currentUserId }: {
   group: ThreadGroup;
   token?: string;
   isLoggedIn?: boolean;
+  currentUserId?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const visibleReplies = expanded ? group.replies : group.replies.slice(0, 2);
@@ -324,6 +359,7 @@ type CommunityFeedProps = {
   nextCursor: string | null;
   isLoggedIn: boolean;
   token?: string;
+  currentUserId?: string;
   onLoadMore: () => void;
   onLoginNavigate: () => void;
   onCreatePost?: () => void;
@@ -338,6 +374,7 @@ export function CommunityFeed({
   nextCursor,
   isLoggedIn,
   token,
+  currentUserId,
   onLoadMore,
   onLoginNavigate,
   onCreatePost,
@@ -422,13 +459,15 @@ export function CommunityFeed({
               key={item.group.root.postId} 
               group={item.group}
               token={token}
-              isLoggedIn={isLoggedIn} />
+              isLoggedIn={isLoggedIn} 
+              currentUserId={currentUserId} />
           ) : (
             <PostCard 
               key={item.post.postId} 
               post={item.post} 
               token={token} 
-              isLoggedIn={isLoggedIn} />
+              isLoggedIn={isLoggedIn} 
+              currentUserId={currentUserId} />
           )
         )
       )}

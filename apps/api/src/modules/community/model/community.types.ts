@@ -50,6 +50,8 @@ export type CommunityComment = {
   displayName: string;
   avatarLabel: string;
   content: string;
+  likeCount: number;
+  likedBy: string[];                   // array of userIds who liked this comment
   createdAt: string;
 };
 

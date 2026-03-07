@@ -32,6 +32,19 @@ export type CommunityFeedResponse = {
   nextCursor?: string | null;
 };
 
+export type CommunityComment = {
+  postId: string;
+  sk: string;
+  commentId: string;
+  userId: string;
+  displayName: string;
+  avatarLabel: string;
+  content: string;
+  likeCount: number;
+  likedBy: string[];
+  createdAt: string;
+};
+
 export async function fetchCommunityFeed(
   token?: string,
   cursor?: string,
@@ -120,4 +133,70 @@ export async function togglePostLike(
 
   if (!res.ok) throw new Error("Failed to toggle like");
   return res.json();
+}
+
+export async function getComments(postId: string, token?: string) {
+  const res = await fetch(`${API_BASE}/community/posts/${postId}/comments`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Failed to fetch comments");
+  return res.json() as Promise<{ comments: CommunityComment[] }>;
+}
+
+export async function addComment(
+  postId: string,
+  postUserId: string,
+  content: string,
+  token: string,
+) {
+  const res = await fetch(`${API_BASE}/community/posts/${postId}/comments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ content, postUserId }),
+  });
+  if (!res.ok) throw new Error("Failed to add comment");
+  return res.json() as Promise<{ comment: CommunityComment }>;
+}
+
+export async function deleteComment(
+  postId: string,
+  commentId: string,
+  postUserId: string,
+  token: string,
+) {
+  const res = await fetch(
+    `${API_BASE}/community/posts/${postId}/comments/${commentId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ postUserId }),
+    },
+  );
+  if (!res.ok) throw new Error("Failed to delete comment");
+  return res.json() as Promise<{ success: boolean }>;
+}
+
+export async function toggleCommentLike(
+  postId: string,
+  commentId: string,
+  token: string,
+) {
+  const res = await fetch(
+    `${API_BASE}/community/posts/${postId}/comments/${commentId}/like`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  if (!res.ok) throw new Error("Failed to toggle comment like");
+  return res.json() as Promise<{ liked: boolean; likeCount: number }>;
 }

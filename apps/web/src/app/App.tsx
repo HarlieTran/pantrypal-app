@@ -32,7 +32,14 @@ export function App() {
 
   const isLoggedIn = session.status === "authenticated";
   const token = session.status === "authenticated" ? session.token : "";
-  const { displayName, accountId, avatarLabel } = useIdentity({ email, givenName, familyName, isLoggedIn });
+  const sessionSub = session.status === "authenticated" ? session.userId : undefined;
+  const { displayName, accountId, avatarLabel, sub } = useIdentity({
+    email,
+    givenName,
+    familyName,
+    isLoggedIn,
+    sub: sessionSub,
+  });
   const { special, heroImageSrc, homeLoading, homeError, expiringItems } = 
     useHomeAndPantryPreview(
       token,
@@ -227,6 +234,7 @@ export function App() {
       accountId={accountId}
       displayName={displayName}
       avatarLabel={avatarLabel}
+      sub={sub}
       expiringItems={expiringItems}
       preferenceProfile={preferenceProfile}
       rightPanel={rightPanel}

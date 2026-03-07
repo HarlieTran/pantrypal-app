@@ -36,6 +36,7 @@ type HomeHeroProps = {
   code: string;
   token: string;
   onboardingCompleted: boolean;
+  sub?: string;
   onEmailChange: (v: string) => void;
   onPasswordChange: (v: string) => void;
   onGivenNameChange: (v: string) => void;
@@ -111,6 +112,7 @@ export function HomeHero({
   code,
   token,
   onboardingCompleted,
+  sub,
   onEmailChange,
   onPasswordChange,
   onGivenNameChange,
@@ -548,6 +550,7 @@ export function HomeHero({
                   error={error}
                   isLoggedIn={isLoggedIn}
                   token={token}
+                  currentUserId={isLoggedIn ? sub : undefined}
                   onLoadMore={loadMore}
                   onLoginNavigate={onLoginNavigate}
                   onCreatePost={isLoggedIn ? () => setShowComposer(true) : undefined}

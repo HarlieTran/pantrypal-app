@@ -25,7 +25,18 @@ import {
 } from "../../pantry/index.js";
 
 import { cookRecipeForUser, getRecipeSuggestionsForUser, getRecipeDetails } from "../../recipes/index.js";
-import { getPublicFeed, getPersonalizedFeed, getOrCreateTodayPinnedTopic, createPost, toggleLike } from "../../community/index.js";
+import { 
+  getPublicFeed, 
+  getPersonalizedFeed, 
+  getOrCreateTodayPinnedTopic, 
+  createPost, 
+  toggleLike,
+  getComments,
+  addComment,
+  deleteComment,
+  toggleCommentLike,
+} from "../../community/index.js";
+
 
 
 // Add Zod schemas
@@ -531,6 +542,94 @@ if (method === "POST" && path === "/community/posts") {
       return { statusCode: 400, body: { error: "Invalid payload", details: error.flatten() } };
     console.error("create post error:", error);
     return { statusCode: 500, body: { error: "Failed to create post" } };
+  }
+}
+
+// GET /community/posts/:postId/comments
+if (method === "GET" && path.match(/^\/community\/posts\/[^/]+\/comments$/)) {
+  try {
+    const postId = path.split("/")[3];
+    const comments = await getComments(postId);
+    return { statusCode: 200, body: { comments } };
+  } catch (error) {
+    console.error("get comments error:", error);
+    return { statusCode: 500, body: { error: "Failed to fetch comments" } };
+  }
+}
+
+// POST /community/posts/:postId/comments
+if (method === "POST" && path.match(/^\/community\/posts\/[^/]+\/comments$/)) {
+  try {
+    const claims = await requireAuth({ headers: { authorization: authHeader } });
+    const postId = path.split("/")[3];
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    const content: string = body.content ?? "";
+    const postUserId: string = body.postUserId ?? "";
+
+    if (!content.trim()) {
+      return { statusCode: 400, body: { error: "Comment cannot be empty" } };
+    }
+
+    const { prisma } = await import("../../../common/db/prisma.js");
+    const user = await prisma.userProfile.findUnique({
+      where: { authProvider_authSubject: { authProvider: "cognito", authSubject: claims.sub } },
+      select: { displayName: true, firstName: true },
+    });
+    const displayName = user?.displayName || user?.firstName || "PantryPal User";
+
+    const comment = await addComment({
+      postId,
+      postUserId,
+      userId: claims.sub,
+      displayName,
+      content: content.trim(),
+    });
+
+    return { statusCode: 201, body: { comment } };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Unauthorized"))
+      return { statusCode: 401, body: { error: "Unauthorized" } };
+    console.error("add comment error:", error);
+    return { statusCode: 500, body: { error: "Failed to add comment" } };
+  }
+}
+
+// DELETE /community/posts/:postId/comments/:commentId
+if (method === "DELETE" && path.match(/^\/community\/posts\/[^/]+\/comments\/[^/]+$/)) {
+  try {
+    const claims = await requireAuth({ headers: { authorization: authHeader } });
+    const parts = path.split("/");
+    const postId = parts[3];
+    const commentId = parts[5];
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    const postUserId: string = body.postUserId ?? "";
+
+    await deleteComment({ postId, commentId, userId: claims.sub, postUserId });
+    return { statusCode: 200, body: { success: true } };
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "Forbidden") return { statusCode: 403, body: { error: "Forbidden" } };
+      if (error.message === "Comment not found") return { statusCode: 404, body: { error: "Not found" } };
+    }
+    return { statusCode: 500, body: { error: "Failed to delete comment" } };
+  }
+}
+
+// POST /community/posts/:postId/comments/:commentId/like
+if (method === "POST" && path.match(/^\/community\/posts\/[^/]+\/comments\/[^/]+\/like$/)) {
+  try {
+    const claims = await requireAuth({ headers: { authorization: authHeader } });
+    const parts = path.split("/");
+    const postId = parts[3];
+    const commentId = parts[5];
+
+    const result = await toggleCommentLike({ postId, commentId, userId: claims.sub });
+    return { statusCode: 200, body: result };
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("Unauthorized"))
+      return { statusCode: 401, body: { error: "Unauthorized" } };
+    console.error("toggle comment like error:", error);
+    return { statusCode: 500, body: { error: "Failed to toggle like" } };
   }
 }
 
