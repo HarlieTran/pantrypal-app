@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchWeeklyTopics } from "../infra/community.api";
-import type { WeeklyTopic } from "../infra/community.api";
+import type { WeeklyTopic } from "../model/community.types";
 
 export function useWeeklyTopics() {
   const [topics, setTopics] = useState<WeeklyTopic[]>([]);

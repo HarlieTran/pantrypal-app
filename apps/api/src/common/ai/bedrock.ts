@@ -1,6 +1,6 @@
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 
-const region = process.env.AWS_REGION || "us-east-1";
+const region = process.env.AWS_REGION || "us-east-2";
 const modelId = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
 
 const client = new BedrockRuntimeClient({ region });
@@ -16,7 +16,7 @@ export type PreferenceInference = {
   };
 };
 
-function stripCodeFence(text: string) {
+export function stripCodeFence(text: string) {
   return text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
 }
 

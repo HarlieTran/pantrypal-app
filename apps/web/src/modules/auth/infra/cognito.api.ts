@@ -4,13 +4,7 @@ import {
   CognitoUserAttribute,
 } from "amazon-cognito-identity-js";
 import { getPool } from "./cognito.pool";
-
-export type SignUpInput = {
-  email: string;
-  password: string;
-  givenName?: string;
-  familyName?: string;
-};
+import type { SignUpInput } from "../model/auth.types";
 
 export function signUp(input: SignUpInput) {
   const pool = getPool();

@@ -1,77 +1,31 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8788";
+import { apiGet, apiPost, apiDelete } from '../../../lib/api';
+import type {
+  CommunityPostView,
+  CommunityTopic,
+  CommunityFeedResponse,
+  CommunityComment,
+  WeeklyTopic,
+} from '../model/community.types';
 
-export type CommunityPostView = {
-  postId: string;
-  userId: string;
-  authorDisplayName?: string;
-  displayName?: string;
-  avatarUrl: string | null;
-  caption: string;
-  imageUrl: string | null;
-  tags: string[] | { ingredients?: string[]; dietTags?: string[]; cuisine?: string };
-  ingredients: string[];
-  likeCount: number;
-  commentCount: number;
-  createdAt: string;
-  topicId?: string;
-  isLikedByCurrentUser?: boolean;
+export type {
+  CommunityPostView,
+  CommunityTopic,
+  CommunityFeedResponse,
+  CommunityComment,
+  WeeklyTopic,
 };
 
-export type CommunityTopic = {
-  topicId: string;
-  title: string;
-  imageUrl: string | null;
-  description: string | null;
-  dailySpecialId: string;
-  createdAt: string;
-};
-
-export type CommunityFeedResponse = {
-  posts: CommunityPostView[];
-  pinnedTopic?: CommunityTopic;
-  nextCursor?: string | null;
-};
-
-export type CommunityComment = {
-  postId: string;
-  sk: string;
-  commentId: string;
-  userId: string;
-  displayName: string;
-  avatarLabel: string;
-  content: string;
-  likeCount: number;
-  likedBy: string[];
-  createdAt: string;
-};
-
+// API Functions
 export async function fetchCommunityFeed(
   token?: string,
   cursor?: string,
 ): Promise<CommunityFeedResponse> {
-  const params = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
-
-  const res = await fetch(`${API_BASE}/community${params}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-
-  if (!res.ok) throw new Error(`Failed to load community feed (${res.status})`);
-
-  return res.json();
+  const endpoint = cursor ? `/community?cursor=${encodeURIComponent(cursor)}` : '/community';
+  return apiGet<CommunityFeedResponse>(endpoint, token);
 }
 
-export type WeeklyTopic = {
-  topicId: string;
-  title: string;
-  imageUrl: string | null;
-  createdAt: string;
-  date: string; // "YYYY-MM-DD"
-};
-
 export async function fetchWeeklyTopics(): Promise<WeeklyTopic[]> {
-  const res = await fetch(`${API_BASE}/community/weekly-topics`);
-  if (!res.ok) throw new Error(`Failed to load weekly topics (${res.status})`);
-  const data = await res.json();
+  const data = await apiGet<{ topics: WeeklyTopic[] }>('/community/weekly-topics');
   return data.topics;
 }
 
@@ -80,18 +34,11 @@ export async function getUploadUrl(
   filename: string,
   contentType: string,
 ): Promise<{ uploadUrl: string; imageKey: string }> {
-  const res = await fetch(`${API_BASE}/community/posts/upload-url`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ filename, contentType }),
-  });
-
-  if (!res.ok) throw new Error("Failed to get upload URL");
-  const data = await res.json();
-  return data as { uploadUrl: string; imageKey: string };
+  return apiPost<{ uploadUrl: string; imageKey: string }>(
+    '/community/posts/upload-url',
+    { filename, contentType },
+    token
+  );
 }
 
 export async function createPost(
@@ -103,18 +50,8 @@ export async function createPost(
     imageS3Key?: string;
   },
 ): Promise<CommunityPostView> {
-  const res = await fetch(`${API_BASE}/community/posts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
-
-  if (!res.ok) throw new Error("Failed to create post");
-  const data = await res.json();
-  return data.post as CommunityPostView;
+  const data = await apiPost<{ post: CommunityPostView }>('/community/posts', payload, token);
+  return data.post;
 }
 
 export async function togglePostLike(
@@ -122,25 +59,18 @@ export async function togglePostLike(
   postId: string,
   postUserId: string,
 ): Promise<{ liked: boolean; likeCount: number }> {
-  const res = await fetch(`${API_BASE}/community/posts/${postId}/like`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ postId, postUserId }),
-  });
-
-  if (!res.ok) throw new Error("Failed to toggle like");
-  return res.json();
+  return apiPost<{ liked: boolean; likeCount: number }>(
+    `/community/posts/${postId}/like`,
+    { postId, postUserId },
+    token
+  );
 }
 
 export async function getComments(postId: string, token?: string) {
-  const res = await fetch(`${API_BASE}/community/posts/${postId}/comments`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!res.ok) throw new Error("Failed to fetch comments");
-  return res.json() as Promise<{ comments: CommunityComment[] }>;
+  return apiGet<{ comments: CommunityComment[] }>(
+    `/community/posts/${postId}/comments`,
+    token
+  );
 }
 
 export async function addComment(
@@ -149,16 +79,11 @@ export async function addComment(
   content: string,
   token: string,
 ) {
-  const res = await fetch(`${API_BASE}/community/posts/${postId}/comments`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ content, postUserId }),
-  });
-  if (!res.ok) throw new Error("Failed to add comment");
-  return res.json() as Promise<{ comment: CommunityComment }>;
+  return apiPost<{ comment: CommunityComment }>(
+    `/community/posts/${postId}/comments`,
+    { content, postUserId },
+    token
+  );
 }
 
 export async function deleteComment(
@@ -167,19 +92,11 @@ export async function deleteComment(
   postUserId: string,
   token: string,
 ) {
-  const res = await fetch(
-    `${API_BASE}/community/posts/${postId}/comments/${commentId}`,
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ postUserId }),
-    },
+  return apiDelete<{ success: boolean }>(
+    `/community/posts/${postId}/comments/${commentId}`,
+    token,
+    { postUserId }
   );
-  if (!res.ok) throw new Error("Failed to delete comment");
-  return res.json() as Promise<{ success: boolean }>;
 }
 
 export async function toggleCommentLike(
@@ -187,16 +104,9 @@ export async function toggleCommentLike(
   commentId: string,
   token: string,
 ) {
-  const res = await fetch(
-    `${API_BASE}/community/posts/${postId}/comments/${commentId}/like`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    },
+  return apiPost<{ liked: boolean; likeCount: number }>(
+    `/community/posts/${postId}/comments/${commentId}/like`,
+    {},
+    token
   );
-  if (!res.ok) throw new Error("Failed to toggle comment like");
-  return res.json() as Promise<{ liked: boolean; likeCount: number }>;
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getUploadUrl, createPost } from "../infra/community.api";
-import type { CommunityPostView } from "../infra/community.api";
+import type { CommunityPostView } from "../model/community.types";
 
 type CreatePostInput = {
   caption: string;

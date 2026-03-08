@@ -2,6 +2,8 @@ import { prisma } from "../../../common/db/prisma.js";
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { INGREDIENT_CATEGORIES, type IngredientCategory } from "@pantrypal/shared-types";
 import type { MatchedIngredient, ParsedIngredient } from "../../pantry/index.js";
+import { stripCodeFence } from "../../../common/ai/bedrock.js";
+
 
 const bedrockClient = new BedrockRuntimeClient({
   region: process.env.AWS_REGION || "us-east-2",
@@ -9,13 +11,7 @@ const bedrockClient = new BedrockRuntimeClient({
 const BEDROCK_MODEL = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
 const CATEGORY_PROMPT_LIST = INGREDIENT_CATEGORIES.join("|");
 
-function stripCodeFence(text: string) {
-  return text
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-}
+
 
 function normalize(name: string) {
   return name.trim().toLowerCase();

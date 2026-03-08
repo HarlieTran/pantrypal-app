@@ -12,6 +12,20 @@ import {
 } from "../../../common/db/dynamo.js";
 import type { CommunityComment } from "../model/community.types.js";
 
+async function getPostUserIdByPostId(postId: string): Promise<string | null> {
+  const result = await dynamo.send(
+    new QueryCommand({
+      TableName: COMMUNITY_POSTS_TABLE,
+      IndexName: "gsi1-global-feed",
+      KeyConditionExpression: "gsi1pk = :all",
+      FilterExpression: "postId = :pid",
+      ExpressionAttributeValues: { ":all": "ALL", ":pid": postId },
+      Limit: 1,
+    }),
+  );
+  return (result.Items?.[0]?.userId as string) ?? null;
+}
+
 async function getPostSk(postUserId: string, postId: string): Promise<string | null> {
   const result = await dynamo.send(
     new QueryCommand({
@@ -83,15 +97,21 @@ export async function addComment(input: {
   // Increment commentCount on the post
   const postSk = await getPostSk(input.postUserId, input.postId);
   if (postSk) {
-    await dynamo.send(
-      new UpdateCommand({
-        TableName: COMMUNITY_POSTS_TABLE,
-        Key: { userId: input.postUserId, sk: postSk },
-        UpdateExpression:
-          "SET commentCount = if_not_exists(commentCount, :zero) + :one",
-        ExpressionAttributeValues: { ":one": 1, ":zero": 0 },
-      }),
-    );
+    try {
+      await dynamo.send(
+        new UpdateCommand({
+          TableName: COMMUNITY_POSTS_TABLE,
+          Key: { userId: input.postUserId, sk: postSk },
+          UpdateExpression:
+            "SET commentCount = if_not_exists(commentCount, :zero) + :one",
+          ExpressionAttributeValues: { ":one": 1, ":zero": 0 },
+        }),
+      );
+    } catch (err) {
+      console.error("Failed to increment commentCount:", err);
+    }
+  } else {
+    console.error("Post not found for commentCount increment:", { postUserId: input.postUserId, postId: input.postId });
   }
 
   return comment;
@@ -101,7 +121,7 @@ export async function deleteComment(input: {
   postId: string;
   commentId: string;
   userId: string;
-  postUserId: string;
+  postUserId?: string;
 }): Promise<void> {
   // First find the comment to get its sk and verify ownership
   const result = await dynamo.send(
@@ -126,18 +146,25 @@ export async function deleteComment(input: {
   );
 
   // Decrement commentCount on the post
-  const postSk = await getPostSk(input.postUserId, input.postId);
-  if (postSk) {
-    await dynamo.send(
-      new UpdateCommand({
-        TableName: COMMUNITY_POSTS_TABLE,
-        Key: { userId: input.postUserId, sk: postSk },
-        UpdateExpression:
-          "SET commentCount = if_not_exists(commentCount, :zero) - :one",
-        ConditionExpression: "commentCount > :zero",
-        ExpressionAttributeValues: { ":one": 1, ":zero": 0 },
-      }),
-    ).catch(() => {}); // ignore if already 0
+  const postUserId = input.postUserId ?? await getPostUserIdByPostId(input.postId);
+  if (postUserId) {
+    const postSk = await getPostSk(postUserId, input.postId);
+    if (postSk) {
+      try {
+        await dynamo.send(
+          new UpdateCommand({
+            TableName: COMMUNITY_POSTS_TABLE,
+            Key: { userId: postUserId, sk: postSk },
+            UpdateExpression:
+              "SET commentCount = if_not_exists(commentCount, :zero) - :one",
+            ConditionExpression: "commentCount > :zero",
+            ExpressionAttributeValues: { ":one": 1, ":zero": 0 },
+          }),
+        );
+      } catch (err) {
+        console.error("Failed to decrement commentCount:", err);
+      }
+    }
   }
 }
 

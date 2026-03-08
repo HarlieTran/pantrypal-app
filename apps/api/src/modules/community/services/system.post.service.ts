@@ -1,4 +1,4 @@
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamo, COMMUNITY_POSTS_TABLE } from "../../../common/db/dynamo.js";
 import { randomUUID } from "crypto";
 
@@ -19,6 +19,9 @@ export async function createPantryPalSystemPost(input: CreateSystemPostInput) {
     ? `${input.dishName} — ${input.description}`
     : `Today's special: ${input.dishName}`;
 
+  // Extract S3 key from URL
+  const s3Key = input.imageUrl?.match(/amazonaws\.com\/(.+?)(?:\?|$)/)?.[1];
+
   await dynamo.send(
     new PutCommand({
       TableName: COMMUNITY_POSTS_TABLE,
@@ -32,7 +35,7 @@ export async function createPantryPalSystemPost(input: CreateSystemPostInput) {
         displayName: "PantryPal",
         avatarUrl: null,
         caption,
-        imageUrl: input.imageUrl,
+        imageS3Key: s3Key,
         tags: ["daily-special"],
         ingredients: [],
         likeCount: 0,

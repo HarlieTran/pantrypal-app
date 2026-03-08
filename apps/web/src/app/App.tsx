@@ -1,38 +1,58 @@
-import { useState, useEffect } from "react";
 import { useSession } from "./application/useSession";
-import { confirmSignUp, resendCode, signIn, signUp } from "../modules/auth";
-import { getMe } from "../modules/onboarding";
-import { OnboardingQuestionnaire, RecipePreferencePicker, submitRecipeSelections } from "../modules/onboarding";
+import { useAuthForm } from "./application/useAuthForm";
+import { useAppNavigation } from "./application/useAppNavigation";
+import { OnboardingQuestionnaire, RecipePreferencePicker } from "../modules/onboarding";
 import { HomePage } from "../modules/home";
-import type { PreferenceProfile } from "../modules/home";
 import { useIdentity } from "./application/useIdentity";
 import { useHomeAndPantryPreview } from "./application/useHomeAndPantryPreview";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8788";
-
-type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile" | "edit-profile" | "community";
-
-// Right panel state machine — all auth lives here
 export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "onboarding-q" | "onboarding-picks";
 
 export function App() {
-  const [view, setView] = useState<View>("community");
-  const [rightPanel, setRightPanel] = useState<RightPanel>("guest");
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [givenName, setGivenName] = useState("");
-  const [familyName, setFamilyName] = useState("");
-  const [code, setCode] = useState("");
-  const [authError, setAuthError] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-
   const { session, login, logout } = useSession();
-  const [preferenceProfile, setPreferenceProfile] = useState<PreferenceProfile | null>(null);
+  
+  const {
+    view,
+    setView,
+    rightPanel,
+    setRightPanel,
+    onboardingCompleted,
+    setOnboardingCompleted,
+    preferenceProfile,
+    handlePicksComplete,
+    resetOnLogout,
+  } = useAppNavigation(session.status, session.status === "authenticated" ? session.token : "");
+
+  const {
+    email,
+    password,
+    givenName,
+    familyName,
+    code,
+    authError,
+    authLoading,
+    setEmail,
+    setPassword,
+    setGivenName,
+    setFamilyName,
+    setCode,
+    setAuthError,
+    handleSignUp,
+    handleConfirm,
+    handleResend,
+    handleLogin,
+    reset: resetAuthForm,
+  } = useAuthForm((token, userId, email, onboardingCompleted) => {
+    login(token, userId, email);
+    setRightPanel("success");
+    setTimeout(() => setRightPanel("user"), 1800);
+    setOnboardingCompleted(onboardingCompleted);
+  });
 
   const isLoggedIn = session.status === "authenticated";
   const token = session.status === "authenticated" ? session.token : "";
   const sessionSub = session.status === "authenticated" ? session.userId : undefined;
+  
   const { displayName, accountId, avatarLabel, sub } = useIdentity({
     email,
     givenName,
@@ -40,149 +60,35 @@ export function App() {
     isLoggedIn,
     sub: sessionSub,
   });
-  const { special, heroImageSrc, homeLoading, homeError, expiringItems } = 
-    useHomeAndPantryPreview(
-      token,
-      isLoggedIn,
-      session.status === "bootstrapping",
-    );
-
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-
-  // ─── Auth handlers ───────────────────────────────────────────────────────
-
-  // Sync rightPanel and onboardingCompleted when bootstrap resolves
-  useEffect(() => {
-    if (session.status === "authenticated") {
-      // Fetch the user's me data to get onboarding status
-      void (async () => {
-        try {
-          const meResponse = await getMe(session.token);
-          const me = meResponse?.me;
-          setOnboardingCompleted(me?.onboardingCompleted ?? false);
-          setRightPanel("user");
-        } catch {
-          // If fetch fails, still show user panel
-          setRightPanel("user");
-        }
-      })();
-    }
-  }, [session.status]); // only re-runs when status changes
-
-  const onSignUp = async () => {
-    setAuthLoading(true);
-    setAuthError("");
-    try {
-      await signUp({ email: email.trim(), password, givenName: givenName.trim(), familyName: familyName.trim() });
-      setAuthError("Check your email for a verification code, then confirm below.");
-    } catch (e) {
-      setAuthError(String((e as Error).message || "Signup failed."));
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const onConfirm = async () => {
-    setAuthLoading(true);
-    setAuthError("");
-    try {
-      await confirmSignUp(email.trim(), code.trim());
-      // After confirm → go back to login
-      setRightPanel("login");
-      setAuthError("");
-    } catch (e) {
-      setAuthError(String((e as Error).message || "Confirmation failed."));
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const onResend = async () => {
-    try {
-      await resendCode(email.trim());
-      setAuthError("Code resent.");
-    } catch (e) {
-      setAuthError(String((e as Error).message || "Resend failed."));
-    }
-  };
-
-  const onLogin = async () => {
-    setAuthLoading(true);
-    setAuthError("");
-    try {
-      const idToken = await signIn(email.trim(), password);
-
-      const bootstrapRes = await fetch(`${API_BASE}/me/bootstrap`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
-      const bootstrapData = await bootstrapRes.json();
-
-      if (!bootstrapRes.ok) {
-        setAuthError(JSON.stringify(bootstrapData));
-        return;
-      }
-
-      const meResponse = await getMe(idToken);
-      const me = meResponse?.me;
-
-      // Update session state via useSession
-      login(idToken, me?.id ?? "", me?.email ?? email.trim());
-
-      // Show success state briefly, then transition
-      setRightPanel("success");
-
-      setTimeout(() => {
-        setRightPanel("user");
-      }, 1800);
-
-      setOnboardingCompleted(me?.onboardingCompleted ?? false);
-    } catch (e) {
-      setAuthError(String((e as Error).message || "Login failed."));
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-
+  
+  const { special, heroImageSrc, homeLoading, homeError, expiringItems } = useHomeAndPantryPreview(
+    token,
+    isLoggedIn,
+    session.status === "bootstrapping",
+  );
 
   const onLogout = () => {
     logout();
-    setPreferenceProfile(null);
-    setRightPanel("guest");
-    setView("home");
-    setEmail("");
-    setPassword("");
-    setAuthError("");
-    setOnboardingCompleted(false);
+    resetOnLogout();
+    resetAuthForm();
   };
 
-  const handlePicksComplete = async ({
-    selectedImageIds,
-    rejectedImageIds,
-  }: {
-    selectedImageIds: string[];
-    rejectedImageIds: string[];
-  }) => {
-    const res = await submitRecipeSelections(token, { selectedImageIds, rejectedImageIds });
-    const profile = res?.preferenceProfile;
-    setPreferenceProfile({
-      likes: Array.isArray(profile?.likes) ? profile.likes : [],
-      dislikes: Array.isArray(profile?.dislikes) ? profile.dislikes : [],
-      dietSignals: Array.isArray(profile?.dietSignals) ? profile.dietSignals : [],
-      confidence: {
-        likes: Number(profile?.confidence?.likes ?? 0),
-        dislikes: Number(profile?.confidence?.dislikes ?? 0),
-        overall: Number(profile?.confidence?.overall ?? 0),
-      },
-    });
-    setOnboardingCompleted(true);
-    setView("home");
-    setRightPanel("user");
+  const onLogin = async () => {
+    await handleLogin();
   };
 
-  // ─── Full-page views ────────────────────────────────────────────────────
+  const onSignUp = async () => {
+    await handleSignUp();
+  };
 
+  const onConfirm = async () => {
+    const success = await handleConfirm();
+    if (success) setRightPanel("login");
+  };
+
+  const onResend = async () => {
+    await handleResend();
+  };
   if (session.status === "bootstrapping") {
     return (
       <main style={{

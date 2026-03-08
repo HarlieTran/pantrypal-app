@@ -1,18 +1,18 @@
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../../common/db/prisma.js";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { s3 } from "../../../common/storage/s3.js";
 import { getOrCreateTodayPinnedTopic } from "../../community/index.js";
 import { createPantryPalSystemPost } from "../../community/services/system.post.service.js";
 
-const BEDROCK_REGION = process.env.BEDROCK_REGION || process.env.AWS_REGION || "us-east-1";
+const BEDROCK_REGION = process.env.BEDROCK_REGION || process.env.AWS_REGION || "us-east-2";
 const BEDROCK_MODEL_ID =
   process.env.BEDROCK_MODEL_ID || "anthropic.claude-3-5-sonnet-20240620-v1:0";
 
 const bedrock = new BedrockRuntimeClient({ region: BEDROCK_REGION });
 
-const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-2" });
 const bucket = process.env.S3_BUCKET_DAILY_SPECIALS || "";
 
 type GeneratedSpecial = {

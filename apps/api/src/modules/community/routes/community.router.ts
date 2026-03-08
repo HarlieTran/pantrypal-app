@@ -6,6 +6,7 @@ import {
   deleteComment,
   getComments,
   getOrCreateTodayPinnedTopic,
+  getWeeklyTopics,
   getPersonalizedFeed,
   getPublicFeed,
   toggleCommentLike,
@@ -40,45 +41,11 @@ export async function handleCommunityRoute(
 ): Promise<JsonResponse | null> {
   if (!path.startsWith("/community")) return null;
 
+  
   if (method === "GET" && path === "/community/weekly-topics") {
     try {
-      const { dynamo, COMMUNITY_TOPICS_TABLE } = await import("../../../common/db/dynamo.js");
-      const { QueryCommand } = await import("@aws-sdk/lib-dynamodb");
-
-      const results = [];
-      for (let i = 0; i < 7; i++) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const date = d.toISOString().split("T")[0];
-
-        const result = await dynamo.send(
-          new QueryCommand({
-            TableName: COMMUNITY_TOPICS_TABLE,
-            IndexName: "gsi1-pinned-topics",
-            KeyConditionExpression: "isPinned = :pinned AND begins_with(createdAt, :date)",
-            ExpressionAttributeValues: {
-              ":pinned": "true",
-              ":date": date,
-            },
-            Limit: 1,
-          }),
-        );
-
-        const topic = result.Items?.[0];
-        if (topic) {
-          results.push({
-            topicId: topic.topicId,
-            title: topic.title,
-            imageUrl: topic.imageUrl ?? null,
-            createdAt: topic.createdAt,
-            date,
-          });
-        } else {
-          results.push({ topicId: null, title: null, imageUrl: null, createdAt: null, date });
-        }
-      }
-
-      return ok({ topics: results.reverse() });
+      const topics = await getWeeklyTopics();
+      return ok({ topics });
     } catch (error) {
       return serverError("Failed to load weekly topics");
     }
@@ -179,7 +146,7 @@ export async function handleCommunityRoute(
         const postId = parts[3];
         const commentId = parts[5];
         const body = rawBody ? JSON.parse(rawBody) : {};
-        const postUserId: string = body.postUserId ?? "";
+        const postUserId: string | undefined = body.postUserId;
 
         await deleteComment({ postId, commentId, userId: claims.sub, postUserId });
         return ok({ success: true });

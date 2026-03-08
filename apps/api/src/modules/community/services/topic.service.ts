@@ -5,9 +5,7 @@ import type { CommunityTopic } from "../model/community.types.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildTopicSk(): string {
-  return "METADATA";
-}
+const TOPIC_SK = "METADATA";
 
 // ─── Get topic by id ──────────────────────────────────────────────────────────
 
@@ -15,7 +13,7 @@ export async function getTopicById(topicId: string): Promise<CommunityTopic | nu
   const result = await dynamo.send(
     new GetCommand({
       TableName: COMMUNITY_TOPICS_TABLE,
-      Key: { topicId, sk: buildTopicSk() },
+      Key: { topicId, sk: TOPIC_SK },
     }),
   );
 
@@ -58,7 +56,7 @@ export async function createPinnedSystemTopic(input: {
 
   const topic: CommunityTopic = {
     topicId,
-    sk: buildTopicSk(),
+    sk: TOPIC_SK,
     type: "system",
     title: `Do you know this recipe? — ${input.dishName}`,
     dailySpecialId: input.dailySpecialId,
@@ -108,4 +106,50 @@ export async function getOrCreateTodayPinnedTopic(input: {
     }
     throw err;
   }
+}
+
+export async function getWeeklyTopics(): Promise<
+  Array<{
+    topicId: string | null;
+    title: string | null;
+    imageUrl: string | null;
+    createdAt: string | null;
+    date: string;
+  }>
+> {
+  const results = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const date = d.toISOString().split("T")[0];
+
+    const result = await dynamo.send(
+      new QueryCommand({
+        TableName: COMMUNITY_TOPICS_TABLE,
+        IndexName: "gsi1-pinned-topics",
+        KeyConditionExpression: "isPinned = :pinned AND begins_with(createdAt, :date)",
+        ExpressionAttributeValues: {
+          ":pinned": "true",
+          ":date": date,
+        },
+        Limit: 1,
+      }),
+    );
+
+    const topic = result.Items?.[0];
+    if (topic) {
+      results.push({
+        topicId: topic.topicId as string,
+        title: topic.title as string,
+        imageUrl: (topic.imageUrl as string) ?? null,
+        createdAt: topic.createdAt as string,
+        date,
+      });
+    } else {
+      results.push({ topicId: null, title: null, imageUrl: null, createdAt: null, date });
+    }
+  }
+
+  return results.reverse();
 }

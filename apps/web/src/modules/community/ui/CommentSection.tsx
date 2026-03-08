@@ -23,22 +23,29 @@ export function CommentSection({
 }: Props) {
   const {
     comments,
-    visible,
-    hiddenCount,
     isExpanded,
     setIsExpanded,
     isLoading,
     isSubmitting,
     newComment,
     setNewComment,
+    load,
     submit,
     remove,
     likeComment,
   } = useComments(postId, postUserId, token, isOpen, currentUserId);
 
   useEffect(() => {
+    if (isOpen) load();
+  }, [isOpen, load]);
+
+  useEffect(() => {
     onCountChange?.(comments.length);
   }, [comments.length, onCountChange]);
+
+  const preview = comments.slice(0, 2);
+  const visible = isExpanded ? comments : preview;
+  const hiddenCount = comments.length - 2;
 
   if (!isOpen) return null;
 
@@ -130,7 +137,7 @@ export function CommentSection({
                     {/* Delete — own comments only */}
                     {isOwner && (
                       <button
-                        onClick={() => remove(comment.commentId)}
+                        onClick={() => remove(comment.commentId, comment.userId)}
                         style={{
                           background: "none",
                           border: "none",

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useCreatePost } from "../application/useCreatePost";
-import type { CommunityPostView, CommunityTopic } from "../infra/community.api";
+import type { CommunityPostView, CommunityTopic } from "../model/community.types";
 
 type Props = {
   token: string;

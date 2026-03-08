@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { withAuth } from "../../auth/index.js";
 import {
-  bootstrapUser,
-  getMeBySubject,
+  upsertUserProfileFromClaims,
+  getUserBySubject,
   getUserProfile,
   updateUserProfile,
 } from "../index.js";
@@ -23,16 +23,17 @@ export async function handleUsersRoute(
   authHeader?: string,
   rawBody?: string,
 ): Promise<JsonResponse | null> {
+
   if (method === "POST" && path === "/me/bootstrap") {
     return withAuth(authHeader, async (claims) => {
-      const profile = await bootstrapUser(claims);
+      const profile = await upsertUserProfileFromClaims(claims);
       return ok({ profile });
     });
   }
 
   if (method === "GET" && path === "/me") {
     return withAuth(authHeader, async (claims) => {
-      const me = await getMeBySubject(claims.sub);
+      const me = await getUserBySubject(claims.sub);
       return ok({ me });
     });
   }

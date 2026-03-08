@@ -1,5 +1,5 @@
-import { QueryCommand, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
-import { dynamo, COMMUNITY_POSTS_TABLE, COMMUNITY_LIKES_TABLE } from "../../../common/db/dynamo.js";
+import { QueryCommand, GetCommand, PutCommand, BatchGetCommand } from "@aws-sdk/lib-dynamodb";
+import { dynamo, COMMUNITY_POSTS_TABLE, COMMUNITY_LIKES_TABLE, COMMUNITY_COMMENTS_TABLE } from "../../../common/db/dynamo.js";
 import type {
   CommunityPost,
   CommunityPostView,
@@ -11,6 +11,20 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const FEED_PAGE_SIZE = 20;
+
+// ─── Get actual comment count ────────────────────────────────────────────────
+
+async function getActualCommentCount(postId: string): Promise<number> {
+  const result = await dynamo.send(
+    new QueryCommand({
+      TableName: COMMUNITY_COMMENTS_TABLE,
+      KeyConditionExpression: "postId = :pid",
+      ExpressionAttributeValues: { ":pid": postId },
+      Select: "COUNT",
+    }),
+  );
+  return result.Count ?? 0;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -54,17 +68,27 @@ function scorePostForGuest(post: CommunityPost): number {
 
 // ─── Check if user liked a post ───────────────────────────────────────────────
 
-async function hasUserLikedPost(userId: string, postId: string): Promise<boolean> {
+async function batchGetLikedPostIds(
+  userId: string,
+  postIds: string[],
+): Promise<Set<string>> {
+  if (postIds.length === 0) return new Set();
+
   try {
     const result = await dynamo.send(
-      new GetCommand({
-        TableName: COMMUNITY_LIKES_TABLE,
-        Key: { postId, userId },
+      new BatchGetCommand({
+        RequestItems: {
+          [COMMUNITY_LIKES_TABLE]: {
+            Keys: postIds.map((postId) => ({ postId, userId })),
+          },
+        },
       }),
     );
-    return !!result.Item;
+
+    const items = result.Responses?.[COMMUNITY_LIKES_TABLE] ?? [];
+    return new Set(items.map((item) => item.postId as string));
   } catch {
-    return false;
+    return new Set();
   }
 }
 
@@ -102,9 +126,16 @@ export async function getPublicFeed(cursor?: string): Promise<CommunityFeedRespo
   // Resolve image URLs and score
   const scored = await Promise.all(
     posts.map(async (post) => {
-      const resolvedUrl = await resolveImageUrl(post);
+      const actualCommentCount = await getActualCommentCount(post.postId);
+      
+      // Resolve image: prioritize existing imageUrl, otherwise resolve S3 key
+      let finalImageUrl = post.imageUrl;
+      if (!finalImageUrl && post.imageS3Key) {
+        finalImageUrl = await resolveImageUrl(post);
+      }
+      
       return {
-        post: { ...post, imageUrl: resolvedUrl ?? post.imageUrl },
+        post: { ...post, imageUrl: finalImageUrl, commentCount: actualCommentCount },
         score: scorePostForGuest(post),
       };
     }),
@@ -141,15 +172,23 @@ export async function getPersonalizedFeed(
 ): Promise<CommunityFeedResponse> {
   const { posts, lastEvaluatedKey } = await fetchGlobalFeed(cursor);
 
-  // Resolve image URLs, score, and check likes
+  // Single batch request instead of one GetItem per post
+  const likedPostIds = await batchGetLikedPostIds(
+    userId,
+    posts.map((p) => p.postId),
+  );
+
   const scored = await Promise.all(
     posts.map(async (post) => {
-      const [resolvedUrl, isLiked] = await Promise.all([
-        resolveImageUrl(post),
-        hasUserLikedPost(userId, post.postId),
-      ]);
+      const actualCommentCount = await getActualCommentCount(post.postId);
+      const isLiked = likedPostIds.has(post.postId);
+      
+      // Resolve image: use existing imageUrl or resolve S3 key
+      let finalImageUrl = post.imageUrl;
+      if (!finalImageUrl && post.imageS3Key) {
+        finalImageUrl = await resolveImageUrl(post);
+      }
 
-      // Relevance scoring
       const tags = [
         ...(post.tags?.ingredients ?? []),
         ...(post.tags?.dietTags ?? []),
@@ -181,7 +220,7 @@ export async function getPersonalizedFeed(
         post.likeCount * 0.1;
 
       return {
-        post: { ...post, imageUrl: resolvedUrl ?? post.imageUrl, isLikedByCurrentUser: isLiked },
+        post: { ...post, imageUrl: finalImageUrl, isLikedByCurrentUser: isLiked, commentCount: actualCommentCount },
         score,
       };
     }),
@@ -202,6 +241,8 @@ export async function getPersonalizedFeed(
     nextCursor,
   };
 }
+
+// ─── Create a post (authenticated) ────────────────────────────────────
 
 export async function createPost(input: {
   userId: string;

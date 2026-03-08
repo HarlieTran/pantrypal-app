@@ -19,6 +19,7 @@ import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { s3 } from "../../../common/storage/s3.js";
+import { stripCodeFence } from "../../../common/ai/bedrock.js";
 
 //Add constants
 const PANTRY_IMAGES_BUCKET = process.env.PANTRY_IMAGES_BUCKET || process.env.CURATED_RECIPES_BUCKET || "pantrypal-user-pantry-uploads";
@@ -27,13 +28,6 @@ const BEDROCK_MODEL = process.env.BEDROCK_MODEL_ID || "amazon.nova-lite-v1:0";
 const bedrockClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "us-east-2" });
 const CATEGORY_PROMPT_LIST = INGREDIENT_CATEGORIES.join("|");
 
-function stripCodeFence(text: string) {
-  return text
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/\s*```$/i, "")
-    .trim();
-}
 
 
 // ─── Expiry helpers ───────────────────────────────────────────────────────────

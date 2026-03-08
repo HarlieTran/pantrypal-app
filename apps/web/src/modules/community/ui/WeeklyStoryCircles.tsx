@@ -1,4 +1,4 @@
-import type { WeeklyTopic } from "../infra/community.api";
+import type { WeeklyTopic } from "../model/community.types";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 

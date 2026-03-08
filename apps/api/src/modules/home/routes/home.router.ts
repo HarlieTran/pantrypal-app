@@ -27,8 +27,13 @@ export async function handleHomeRoute(
       return unauthorized();
     }
 
-    const todaySpecial = await getOrCreateDailySpecial("global");
-    return ok({ todaySpecial });
+    try {
+      const todaySpecial = await getOrCreateDailySpecial("global");
+      return ok({ todaySpecial });
+    } catch (error) {
+      console.error("Prewarm failed:", error);
+      return serverError("Prewarm failed");
+    }
   }
 
   return null;

@@ -1,7 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import { QUESTION_TYPES } from "@pantrypal/shared-types";
-import type { OnboardingAnswerInput, OnboardingQuestion } from "@pantrypal/shared-types";
-import { completeOnboarding, getOnboardingQuestions, saveAnswers } from "../../infra/onboarding.api";
+import { useOnboardingQuestionnaire } from "../../application/useOnboardingQuestionnaire";
 
 type Props = {
   token: string;
@@ -9,74 +7,15 @@ type Props = {
   onBack: () => void;
 };
 
-type AnswersState = Record<string, { optionValues: string[]; answerText: string }>;
-
 export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
-  const [questions, setQuestions] = useState<OnboardingQuestion[]>([]);
-  const [answers, setAnswers] = useState<AnswersState>({});
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const data = await getOnboardingQuestions();
-        const list = Array.isArray(data?.questions) ? data.questions : [];
-        if (!mounted) return;
-        setQuestions(list);
-        const state: AnswersState = {};
-        for (const q of list) state[q.key] = { optionValues: [], answerText: "" };
-        setAnswers(state);
-      } catch (e) {
-        if (!mounted) return;
-        setError(String((e as Error).message || e));
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
-
-  const toggleMulti = (key: string, value: string) => {
-    setAnswers((prev) => {
-      const cur = prev[key] ?? { optionValues: [], answerText: "" };
-      const exists = cur.optionValues.includes(value);
-      return { ...prev, [key]: { ...cur, optionValues: exists ? cur.optionValues.filter((v) => v !== value) : [...cur.optionValues, value] } };
-    });
-  };
-
-  const setText = (key: string, value: string) => {
-    setAnswers((prev) => ({ ...prev, [key]: { ...(prev[key] ?? { optionValues: [], answerText: "" }), answerText: value } }));
-  };
-
-  // Only show the two main multi-choice questions inline (allergies + diet)
-  // Free-text children shown as compact inputs below each parent
-  const mainQuestions = useMemo(
-    () => questions.filter((q) => q.type !== QUESTION_TYPES.FREE_TEXT || !questions.some((p) => q.key.startsWith(p.key + "_"))),
-    [questions]
-  );
+  const { mainQuestions, answers, loading, saving, error, toggleMulti, setText, submit } = useOnboardingQuestionnaire(token);
 
   const onSave = async () => {
-    setSaving(true);
-    setError("");
     try {
-      const payload: OnboardingAnswerInput[] = questions
-        .map((q) => {
-          const a = answers[q.key] ?? { optionValues: [], answerText: "" };
-          if (q.type === QUESTION_TYPES.FREE_TEXT) return { questionKey: q.key, answerText: a.answerText.trim() };
-          return { questionKey: q.key, optionValues: a.optionValues };
-        })
-        .filter((item) => ("optionValues" in item ? (item.optionValues?.length ?? 0) > 0 : Boolean(item.answerText?.trim())));
-
-      await saveAnswers(token, payload);
-      await completeOnboarding(token);
+      await submit();
       onCompleted();
-    } catch (e) {
-      setError(String((e as Error).message || "Failed to save."));
-    } finally {
-      setSaving(false);
+    } catch {
+      // Error already set in hook
     }
   };
 

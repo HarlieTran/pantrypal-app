@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchCommunityFeed } from "../infra/community.api";
-import type { CommunityFeedResponse, CommunityPostView, CommunityTopic } from "../infra/community.api";
+import type {
+  CommunityFeedResponse,
+  CommunityPostView,
+  CommunityTopic,
+} from "../model/community.types";
 
 type Params = {
   token: string;     // empty string = guest
@@ -24,10 +28,7 @@ export function useCommunityFeed({ token, enabled }: Params) {
     setError("");
 
     try {
-      const data: CommunityFeedResponse = await fetchCommunityFeed(
-        token || undefined,
-        cursor,
-      );
+      const data = await fetchCommunityFeed(token || undefined, cursor);
       if (isLoadMore) {
         setPosts((prev) => [...prev, ...data.posts]);
       } else {

@@ -1,7 +1,7 @@
-import type { CommunityPostView, CommunityTopic } from "../infra/community.api";
-import { togglePostLike } from "../infra/community.api";
-import { useEffect, useState } from "react";
+import type { CommunityPostView, CommunityTopic } from "../model/community.types";
+import { useState } from "react";
 import { CommentSection } from "./CommentSection";
+import { usePostInteractions } from "../application/usePostInteractions";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -93,37 +93,15 @@ function PostCard({ post, showThreadLine = true, token, isLoggedIn, currentUserI
   isLoggedIn?: boolean;
   currentUserId?: string;
 }) {
-  const [liked, setLiked] = useState(post.isLikedByCurrentUser ?? false);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const { liked, likeCount, liking, handleLike } = usePostInteractions(
+    post.postId,
+    post.userId,
+    post.isLikedByCurrentUser ?? false,
+    post.likeCount,
+    token,
+  );
   const [commentCount, setCommentCount] = useState(post.commentCount ?? 0);
-  const [liking, setLiking] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
-
-  useEffect(() => {
-    setCommentCount(post.commentCount ?? 0);
-  }, [post.postId, post.commentCount]);
-
-  async function handleLike() {
-    if (!token || !isLoggedIn || liking) return;
-    setLiking(true);
-
-    // Optimistic update
-    const wasLiked = liked;
-    setLiked(!wasLiked);
-    setLikeCount((c) => c + (wasLiked ? -1 : 1));
-
-    try {
-      const result = await togglePostLike(token, post.postId, post.userId);
-      setLiked(result.liked);
-      setLikeCount(result.likeCount);
-    } catch {
-      // Revert on failure
-      setLiked(wasLiked);
-      setLikeCount((c) => c + (wasLiked ? 1 : -1));
-    } finally {
-      setLiking(false);
-    }
-  }
 
   const isSystem = (post as any).isSystemPost === true || post.userId === "pantrypal-system";
 
@@ -308,7 +286,8 @@ function ThreadGroupCard({ group, token, isLoggedIn, currentUserId }: {
           post={group.root} 
           showThreadLine={group.replies.length > 0} 
           token={token} 
-          isLoggedIn={isLoggedIn} />
+          isLoggedIn={isLoggedIn}
+          currentUserId={currentUserId} />
       </div>
 
       {/* Replies */}
@@ -319,6 +298,7 @@ function ThreadGroupCard({ group, token, isLoggedIn, currentUserId }: {
             showThreadLine={i < visibleReplies.length - 1}
             token={token} 
             isLoggedIn={isLoggedIn}
+            currentUserId={currentUserId}
           />
         </div>
       ))}

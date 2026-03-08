@@ -1,3 +1,5 @@
 export { LoginPage } from "./ui/pages/LoginPage";
 export { SignUpPage } from "./ui/pages/SignUpPage";
-export { confirmSignUp, resendCode, signIn, signOut, signUp } from "./infra/cognito.api";
+export { signOut, signIn, signUp, confirmSignUp, resendCode } from "./infra/cognito.api";
+export { useAuth } from "./application/useAuth";
+export type { SignUpInput } from "./model/auth.types";

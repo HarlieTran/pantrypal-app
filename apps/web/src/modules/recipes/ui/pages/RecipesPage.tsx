@@ -1,10 +1,5 @@
-import { useEffect, useState } from "react";
-import {
-  cookRecipe,
-  fetchRecipeDetails,
-  fetchRecipeSuggestions,
-} from "../../infra/recipes.api";
-import type { CookRecipeResult, RecipeDetails, RecipeSuggestion } from "../../model/recipes.types";
+import { useRecipeSuggestions } from "../../application/useRecipeSuggestions";
+import { useRecipeDetails } from "../../application/useRecipeDetails";
 import { RecipeDetailsModal } from "../components/RecipeDetailsModal";
 
 interface Props {
@@ -14,97 +9,35 @@ interface Props {
 }
 
 export function RecipesPage({ token, onBack, embedded = false }: Props) {
-  const [items, setItems] = useState<RecipeSuggestion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [pantrySignature, setPantrySignature] = useState("");
-
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [selectedRecipe, setSelectedRecipe] = useState<RecipeDetails | null>(null);
-  const [selectedSuggestion, setSelectedSuggestion] = useState<RecipeSuggestion | null>(null);
-  const [detailsLoading, setDetailsLoading] = useState(false);
-  const [detailsError, setDetailsError] = useState("");
-
-  const [cooking, setCooking] = useState(false);
-  const [cookPreview, setCookPreview] = useState<CookRecipeResult | null>(null);
-  const [cookError, setCookError] = useState("");
-
-  const loadSuggestions = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const data = await fetchRecipeSuggestions(token, 12);
-      setItems(data.recipes);
-      setPantrySignature(data.pantrySignature);
-    } catch (e) {
-      setError(String((e as Error).message || "Failed to load suggestions"));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const openDetails = async (id: number) => {
-    try {
-      setSelectedId(id);
-      setSelectedSuggestion(items.find((x) => x.id === id) ?? null);
-      setCookPreview(null);
-      setCookError("");
-      setDetailsLoading(true);
-      setDetailsError("");
-      const details = await fetchRecipeDetails(token, id);
-      setSelectedRecipe(details);
-    } catch (e) {
-      setDetailsError(String((e as Error).message || "Failed to load recipe details"));
-    } finally {
-      setDetailsLoading(false);
-    }
-  };
-
-  const handleCookPreview = async () => {
-    if (!selectedId) return;
-    try {
-      setCooking(true);
-      setCookError("");
-      const preview = await cookRecipe(token, selectedId, { servingsUsed: 1, dryRun: true });
-      setCookPreview(preview);
-    } catch (e) {
-      setCookError(String((e as Error).message || "Failed to preview cook action"));
-    } finally {
-      setCooking(false);
-    }
-  };
+  const { items, loading, error, pantrySignature, load } = useRecipeSuggestions(token);
+  const {
+    selectedId,
+    selectedRecipe,
+    selectedSuggestion,
+    detailsLoading,
+    detailsError,
+    cooking,
+    cookPreview,
+    cookError,
+    open,
+    preview,
+    confirm,
+    close,
+    retry,
+  } = useRecipeDetails(token, items);
 
   const handleCookConfirm = async () => {
-    if (!selectedId) return;
     try {
-      setCooking(true);
-      setCookError("");
-      const applied = await cookRecipe(token, selectedId, { servingsUsed: 1, dryRun: false });
-
-      const changedCount = applied.updatedItems.length + applied.removedItems.length;
-      if (changedCount === 0) {
-        const unmatched = applied.unmatchedIngredients.length;
-        const warningMsg = applied.warnings.length > 0 ? ` Warnings: ${applied.warnings.length}.` : "";
-        alert(`No pantry quantities were deducted. Matched changes: 0. Unmatched ingredients: ${unmatched}.${warningMsg}`);
-        return;
+      const applied = await confirm();
+      if (applied) {
+        close();
+        alert(`Pantry updated successfully. Updated: ${applied.updatedItems.length}, Removed: ${applied.removedItems.length}.`);
+        onBack();
       }
-
-      setCookPreview(null);
-      setSelectedId(null);
-      setSelectedRecipe(null);
-      setSelectedSuggestion(null);
-      alert(`Pantry updated successfully. Updated: ${applied.updatedItems.length}, Removed: ${applied.removedItems.length}.`);
-      onBack();
-    } catch (e) {
-      setCookError(String((e as Error).message || "Failed to apply cook action"));
-    } finally {
-      setCooking(false);
+    } catch {
+      // Error already set in hook
     }
   };
-
-  useEffect(() => {
-    void loadSuggestions();
-  }, []);
 
   const content = (
     <>
@@ -117,7 +50,7 @@ export function RecipesPage({ token, onBack, embedded = false }: Props) {
             </div>
           </div>
           <div className="ig-toolbar-actions">
-            <button className="btn-primary" onClick={() => void loadSuggestions()}>Find Recipes</button>
+            <button className="btn-primary" onClick={() => void load()}>Find Recipes</button>
           </div>
         </header>
 
@@ -157,7 +90,7 @@ export function RecipesPage({ token, onBack, embedded = false }: Props) {
                 </div>
 
                 <div className="ig-recipe-card-body-footer">
-                  <button className="btn-primary" onClick={() => void openDetails(r.id)}>View Recipe</button>
+                  <button className="btn-primary" onClick={() => void open(r.id)}>View Recipe</button>
                 </div>
               </div>
             </article>
@@ -174,23 +107,10 @@ export function RecipesPage({ token, onBack, embedded = false }: Props) {
           cooking={cooking}
           cookPreview={cookPreview}
           cookError={cookError}
-          onClose={() => {
-            setSelectedId(null);
-            setSelectedRecipe(null);
-            setSelectedSuggestion(null);
-            setCookPreview(null);
-            setCookError("");
-            setDetailsError("");
-          }}
-          onRetry={() => {
-            if (selectedId) void openDetails(selectedId);
-          }}
-          onCookPreview={() => {
-            void handleCookPreview();
-          }}
-          onCookConfirm={() => {
-            void handleCookConfirm();
-          }}
+          onClose={close}
+          onRetry={retry}
+          onCookPreview={() => void preview()}
+          onCookConfirm={() => void handleCookConfirm()}
         />
     </>
   );

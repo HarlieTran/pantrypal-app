@@ -1,9 +1,4 @@
 export {
-  bootstrapUser,
-  getMeBySubject,
-} from "./services/users.service.js";
-
-export {
   getUserBySubject,
   getUserDisplayNameBySubject,
   getUserFeedPreferencesBySubject,
