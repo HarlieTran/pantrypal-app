@@ -6,4 +6,4 @@ dist/
 *.log
 .aws-sam/
 response.json
-infra/aws/sam/prewarm-params.json 
+params* 
