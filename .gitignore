@@ -6,4 +6,4 @@ dist/
 *.log
 .aws-sam/
 response.json
-infra/aws/sam/prewarm-params.json            ← has your DB password and API keys in plaintext
+infra/aws/sam/prewarm-params.json 
