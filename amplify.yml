@@ -4,10 +4,10 @@ applications:
       phases:
         preBuild:
           commands:
-            - cd $CODEBUILD_SRC_DIR && npm install
+            - cd $CODEBUILD_SRC_DIR/pantrypal-app && npm install
         build:
           commands:
-            - cd $CODEBUILD_SRC_DIR && npm run build --workspace=apps/web
+            - cd $CODEBUILD_SRC_DIR/pantrypal-app && npm run build --workspace=apps/web
       artifacts:
         baseDirectory: apps/web/dist
         files:
