@@ -9,7 +9,7 @@ applications:
           commands:
             - cd $CODEBUILD_SRC_DIR/pantrypal-app && npm run build --workspace=apps/web
       artifacts:
-        baseDirectory: apps/web/dist
+        baseDirectory: dist
         files:
           - '**/*'
       cache:
