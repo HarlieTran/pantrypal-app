@@ -1,18 +1,17 @@
 # Profile Module
 
-## Responsibility
-Owns profile viewing/editing UI and profile-related application flows.
+User profile management and dietary preferences.
+
+## Features
+- Profile display with dietary information
+- Edit profile with AI-assist
+- Dietary preferences (diet type, allergies, likes/dislikes)
+- Confidence indicators for preferences
+- Recipe preference picker integration
 
 ## Structure
-- `ui/` page components and visual elements
-- `application/` hooks and view-model composition
-- `infra/` HTTP client calls to backend profile endpoints
-- `model/` domain types and module constants
-
-## Public API
-- `ProfilePage`
-- `EditProfilePage`
-
-## Notes
-- Cross-module dependencies should go through module public APIs.
-- Keep network and side-effects in `application`/`infra`, not `ui` pages.
+- `application/` - Profile data and edit form hooks
+- `infra/` - Profile API client
+- `model/` - Profile types and constants
+- `styles/` - Profile-specific styles
+- `ui/pages/` - Profile and edit profile pages

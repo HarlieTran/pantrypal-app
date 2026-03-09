@@ -60,13 +60,10 @@ export function App() {
   const { profile } = useProfilePageData(isLoggedIn ? token : "");
   
   const { displayName, accountId, avatarLabel, sub } = useIdentity({
-    email,
-    givenName,
-    familyName,
     isLoggedIn,
     sub: sessionSub,
-    profileDisplayName: profile?.displayName,
-    profileEmail: profile?.email,
+    profileDisplayName: profile?.displayName ?? undefined,
+    profileEmail: profile?.email ?? undefined,
   });
   
   const { special, heroImageSrc, homeLoading, homeError, expiringItems } = useHomeAndPantryPreview(
@@ -148,7 +145,7 @@ export function App() {
       accountId={accountId}
       displayName={displayName}
       avatarLabel={avatarLabel}
-      sub={sub ?? undefined}
+      sub={sub}
       expiringItems={expiringItems}
       preferenceProfile={preferenceProfile}
       rightPanel={rightPanel}

@@ -1,19 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { HomeSpecial } from "../../model/home.types";
+import type { ExpiringPreviewItem } from "../../model/home.shared.types";
 import type { RightPanel } from "../../../../app/App";
-import { OnboardingQuestionnaire, RecipePreferencePicker } from "../../../onboarding";
 import { PantryPage } from "../../../pantry";
 import { RecipesPage } from "../../../recipes";
 import { ProfilePage, EditProfilePage } from "../../../profile";
 import { CommunityFeed, useCommunityFeed, useWeeklyTopics, WeeklyStoryCircles, PostComposer } from "../../../community";
-
-
-type ExpiringPreviewItem = {
-  name: string;
-  expiryDate?: string;
-  daysUntilExpiry?: number;
-  status: "expired" | "expiring_soon";
-};
+import { HomeSidebar } from "./HomeSidebar";
+import { HomeRightPanel } from "./HomeRightPanel";
+import { DailySpecialCard } from "./DailySpecialCard";
 
 type HomeHeroProps = {
   centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community";
@@ -64,83 +59,29 @@ type HomeHeroProps = {
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
-function getExpiryLabel(item: ExpiringPreviewItem) {
-  if (item.status === "expired") return "Expired";
-  if (typeof item.daysUntilExpiry === "number") {
-    if (item.daysUntilExpiry <= 0) return "Today";
-    if (item.daysUntilExpiry === 1) return "Tomorrow";
-    return `In ${item.daysUntilExpiry} days`;
-  }
-  if (item.expiryDate) return `By ${item.expiryDate}`;
-  return "Expiring soon";
-}
+export function HomeHero(props: HomeHeroProps) {
+  const {
+    centerView,
+    heroImageSrc,
+    special,
+    homeLoading,
+    homeError,
+    isLoggedIn,
+    accountId,
+    displayName,
+    avatarLabel,
+    token,
+    sub,
+    onHome,
+    onLogout,
+    onLoginNavigate,
+    onPantryNavigate,
+    onRecipesNavigate,
+    onProfileNavigate,
+    onEditProfileNavigate,
+    onRightPanelChange,
+  } = props;
 
-// ─── Animated panel wrapper ───────────────────────────────────────────────────
-
-function AnimatedPanel({ panelKey, children }: { panelKey: string; children: React.ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.classList.remove("ig-right-panel-enter");
-    void el.offsetWidth; // force reflow
-    el.classList.add("ig-right-panel-enter");
-  }, [panelKey]);
-
-  return <div ref={ref}>{children}</div>;
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
-
-export function HomeHero({
-  centerView,
-  heroImageSrc,
-  special,
-  homeLoading,
-  homeError,
-  isLoggedIn,
-  accountId,
-  displayName,
-  avatarLabel,
-  expiringItems,
-  rightPanel,
-  authError,
-  authLoading,
-  email,
-  password,
-  givenName,
-  familyName,
-  code,
-  token,
-  onboardingCompleted,
-  sub,
-  signupStage,
-  onSetSignupStage,
-  onEmailChange,
-  onPasswordChange,
-  onGivenNameChange,
-  onFamilyNameChange,
-  onCodeChange,
-  onHome,
-  onLogout,
-  onLoginNavigate,
-  onSignUpNavigate,
-  onPantryNavigate,
-  onLogin,
-  onSignUp,
-  onConfirm,
-  onResend,
-  onRecipesNavigate,
-  onOnboardingComplete,
-  onPicksComplete,
-  onRequestMorePicks,
-  onRightPanelChange,
-  onProfileNavigate,
-  onEditProfileNavigate,
-}: HomeHeroProps) {
-  const [openRow, setOpenRow] = useState<"history" | "flavor" | "origin" | null>(null);
-  const isBootstrapping = false;
   const { posts, pinnedTopic, nextCursor, loading, loadingMore, error, loadMore, refresh } =
     useCommunityFeed({ token, enabled: true });
   
@@ -151,11 +92,12 @@ export function HomeHero({
   const filteredPosts = selectedDate
     ? posts.filter((p) => p.createdAt.startsWith(selectedDate))
     : posts;
-    const today = new Date();
-    const todayIndex = today.getDay();
-    const todayLabel = today.toLocaleDateString("en-US", {
-      weekday: "long", month: "long", day: "numeric",
-    });
+
+  const today = new Date();
+  const todayIndex = today.getDay();
+  const todayLabel = today.toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  });
 
   const stories = useMemo(
     () =>
@@ -168,358 +110,22 @@ export function HomeHero({
   );
 
   const [showComposer, setShowComposer] = useState(false);
-  const [typedText, setTypedText] = useState("");
-  const [showSteps, setShowSteps] = useState(false);
-  const fullText = "Make every penny count. Build a smarter pantry and never waste food again.";
-
-  useEffect(() => {
-    if (rightPanel !== "guest") return;
-    
-    const runAnimation = () => {
-      let index = 0;
-      setTypedText("");
-      setShowSteps(false);
-      const timer = setInterval(() => {
-        if (index < fullText.length) {
-          setTypedText(fullText.slice(0, index + 1));
-          index++;
-        } else {
-          clearInterval(timer);
-          setTimeout(() => setShowSteps(true), 300);
-        }
-      }, 30);
-      return timer;
-    };
-
-    const typingTimer = runAnimation();
-    const repeatInterval = setInterval(() => {
-      runAnimation();
-    }, 30000);
-
-    return () => {
-      clearInterval(typingTimer);
-      clearInterval(repeatInterval);
-    };
-  }, [rightPanel]);
-
-  // ─── Right panel state machine ──────────────────────────────────────────────
-
-  function renderRightPanel() {
-    switch (rightPanel) {
-
-      case "guest":
-        return (
-          <AnimatedPanel panelKey="guest">
-            <section className="ig-guest-box">
-              <h3>Welcome to PantryPal</h3>
-              <p className="ig-guest-copy">
-                {typedText}<span className="typing-cursor">|</span>
-              </p>
-              {showSteps && (
-                <div className="ig-steps-container">
-                  <div className="ig-step-item">
-                    <div className="ig-step-icon">👤</div>
-                    <span className="ig-step-text">Create account</span>
-                  </div>
-                  <div className="ig-step-arrow">→</div>
-                  <div className="ig-step-item">
-                    <div className="ig-step-icon">📸</div>
-                    <span className="ig-step-text">Scan receipt</span>
-                  </div>
-                  <div className="ig-step-arrow">→</div>
-                  <div className="ig-step-item">
-                    <div className="ig-step-icon">🍳</div>
-                    <span className="ig-step-text">Get recipe</span>
-                  </div>
-                </div>
-              )}
-              <div className="auth-panel-actions">
-                <button className="btn-primary" onClick={onLoginNavigate}>Log in</button>
-              </div>
-            </section>
-          </AnimatedPanel>
-        );
-
-      case "login":
-        return (
-          <AnimatedPanel panelKey="login">
-            <section>
-              <p className="auth-panel-label">Welcome back</p>
-              <h3 className="auth-panel-title">Log in</h3>
-              <div className="auth-panel-grid">
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => onEmailChange(e.target.value)}
-                  autoComplete="email"
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => onPasswordChange(e.target.value)}
-                  autoComplete="current-password"
-                  onKeyDown={(e) => { if (e.key === "Enter") onLogin(); }}
-                />
-              </div>
-              {authError && <p className="auth-panel-error">{authError}</p>}
-              <div className="auth-panel-actions-row">
-                <button className="btn-primary" onClick={onLogin} disabled={authLoading}>
-                  {authLoading ? "Logging in…" : "Log in"}
-                </button>
-              </div>
-              <p className="auth-panel-footer">
-                Don't have an account?{" "}
-                <button onClick={onSignUpNavigate} className="auth-panel-link">Sign up</button>
-              </p>
-            </section>
-          </AnimatedPanel>
-        );
-
-      case "signup":
-        return (
-          <AnimatedPanel panelKey={`signup-${signupStage}`}>
-            <section>
-              {signupStage === 'form' ? (
-                <>
-                  <p className="auth-panel-label">Create account</p>
-                  <h3 className="auth-panel-title">Sign up</h3>
-                  <div className="auth-panel-grid">
-                    <div className="auth-panel-grid-2col">
-                      <input
-                        type="text"
-                        placeholder="First name"
-                        value={givenName}
-                        onChange={(e) => onGivenNameChange(e.target.value)}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Last name"
-                        value={familyName}
-                        onChange={(e) => onFamilyNameChange(e.target.value)}
-                      />
-                    </div>
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={email}
-                      onChange={(e) => onEmailChange(e.target.value)}
-                    />
-                    <input
-                      type="password"
-                      placeholder="Password"
-                      value={password}
-                      onChange={(e) => onPasswordChange(e.target.value)}
-                    />
-                  </div>
-                  {authError && <p className="auth-panel-error">{authError}</p>}
-                  <div className="auth-panel-actions-row">
-                    <button className="btn-primary" onClick={onSignUp} disabled={authLoading}>
-                      {authLoading ? "Creating…" : "Create account"}
-                    </button>
-                  </div>
-                  <p className="auth-panel-footer">
-                    Already have an account?{" "}
-                    <button onClick={onLoginNavigate} className="auth-panel-link">Log in</button>
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="auth-panel-label">Verify email</p>
-                  <h3 className="auth-panel-title">Enter code</h3>
-                  <p className="auth-panel-footer" style={{ marginBottom: '14px' }}>
-                    We sent a verification code to {email}
-                  </p>
-                  <div className="auth-panel-grid">
-                    <input
-                      type="text"
-                      placeholder="Verification code"
-                      value={code}
-                      onChange={(e) => onCodeChange(e.target.value)}
-                      autoFocus
-                    />
-                  </div>
-                  {authError && <p className="auth-panel-error">{authError}</p>}
-                  <div className="auth-panel-actions-row">
-                    <button className="btn-primary" onClick={onConfirm} disabled={authLoading}>
-                      {authLoading ? "Verifying…" : "Confirm code"}
-                    </button>
-                  </div>
-                  <div className="auth-panel-secondary-actions">
-                    <button onClick={onResend} className="auth-panel-secondary-link">
-                      Resend code
-                    </button>
-                    <span className="auth-panel-divider">·</span>
-                    <button onClick={() => onSetSignupStage('form')} className="auth-panel-secondary-link">
-                      Back to signup
-                    </button>
-                  </div>
-                </>
-              )}
-            </section>
-          </AnimatedPanel>
-        );
-
-
-      case "success":
-        return (
-          <AnimatedPanel panelKey="success">
-            <section className="success-panel">
-              <div className="success-icon">✓</div>
-              <h3 className="success-title">Welcome back!</h3>
-              <p className="success-text">Loading your pantry…</p>
-            </section>
-          </AnimatedPanel>
-        );
-
-      case "user":
-        return (
-          <AnimatedPanel panelKey="user">
-            <>
-              <section className="ig-user-box">
-                <div className="ig-avatar">{avatarLabel}</div>
-                <div>
-                  <p className="ig-account-id">{accountId}</p>
-                  <p className="ig-display-name">{displayName}</p>
-                </div>
-                <button onClick={onLogout} className="user-panel-logout">Log out</button>
-              </section>
-
-              {/* Complete Profile CTA — only shown if onboarding not done */}
-              {!onboardingCompleted && (
-                <button onClick={() => onRightPanelChange("onboarding-q")} className="onboarding-cta">
-                  <span className="onboarding-cta-icon">✦</span>
-                  Complete your profile
-                </button>
-              )}
-
-              <section className="ig-suggest-box">
-                <div className="ig-suggest-head">
-                  <h3>Expiring Soon</h3>
-                  <button className="ig-plain-link" onClick={onPantryNavigate}>See all</button>
-                </div>
-                {expiringItems.length ? (
-                  <ul className="ig-expire-list">
-                    {expiringItems.map((item) => (
-                      <li key={`${item.name}-${item.expiryDate ?? "na"}`}>
-                        <div>
-                          <p className="ig-expire-name">{item.name}</p>
-                          <p className="ig-expire-meta">{getExpiryLabel(item)}</p>
-                        </div>
-                        <span className={`ig-expire-pill ${item.status}`}>
-                          {item.status === "expired" ? "Expired" : "Soon"}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="ig-guest-copy">No expiring items. Your pantry looks great!</p>
-                )}
-              </section>
-            </>
-          </AnimatedPanel>
-        );
-
-      case "onboarding-q":
-        return (
-          <AnimatedPanel panelKey="onboarding-q">
-            <OnboardingQuestionnaire
-              token={token}
-              onCompleted={onOnboardingComplete}
-              onBack={() => onRightPanelChange("user")}
-            />
-          </AnimatedPanel>
-        );
-
-      case "onboarding-picks":
-        return (
-          <AnimatedPanel panelKey="onboarding-picks">
-            <RecipePreferencePicker
-              onPicksComplete={onPicksComplete}
-              onRequestMore={onRequestMorePicks}
-              onBack={() => onRightPanelChange("user")}
-            />
-          </AnimatedPanel>
-        );
-    }
-  } // renderRightPanel ends here
-
-  // ─── Layout ─────────────────────────────────────────────────────────────────
 
   return (
     <section className="ig-home">
-      {/* Left sidebar */}
-      <aside className="ig-left-rail">
-        <div className="ig-left-logo">PantryPal</div>
-        <nav className="ig-left-nav">
-          {/* Home — always visible */}
-          <button className={`ig-left-link${centerView === "home" ? " is-active" : ""}`} onClick={onHome}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
-            </svg>
-            <span className="ig-left-text">Home</span>
-          </button>
-
-          {isLoggedIn ? (
-            <>
-              {/* Pantry */}
-              <button className={`ig-left-link${centerView === "pantry" ? " is-active" : ""}`} onClick={onPantryNavigate}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6-.354.353V14.5A1.5 1.5 0 0 0 2.5 16h11a1.5 1.5 0 0 0 1.5-1.5V7.5l-.354-.354zM11 13H9v-2H7v2H5V7.207l3-3 3 3z"/>
-                </svg>
-                <span className="ig-left-text">Pantry</span>
-              </button>
-
-              {/* Recipes */}
-              <button className={`ig-left-link${centerView === "recipes" ? " is-active" : ""}`} onClick={onRecipesNavigate}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v11.5a.5.5 0 0 1-.777.416L8 11.101l-4.223 2.815A.5.5 0 0 1 3 13.5zm1 0v10.566l3.723-2.482a.5.5 0 0 1 .554 0L12 12.566V2z"/>
-                </svg>
-                <span className="ig-left-text">Recipes</span>
-              </button>
-
-              {/* Search */}
-              <button className="ig-left-link">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-                </svg>
-                <span className="ig-left-text">Search</span>
-              </button>
-
-              {/* Profile */}
-              <button className={`ig-left-link${centerView === "profile" || centerView === "edit-profile" ? " is-active" : ""}`} onClick={onProfileNavigate}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
-                </svg>
-                <span className="ig-left-text">Profile</span>
-              </button>
-
-              {/* Logout — pushed to bottom */}
-              <button className="ig-left-link left-nav-logout" onClick={onLogout}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path fillRule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
-                  <path fillRule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
-                </svg>
-                <span className="ig-left-text">Logout</span>
-              </button>
-            </>
-          ) : (
-            /* Guest — Login only */
-            <button className="ig-left-link" onClick={onLoginNavigate}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path fillRule="evenodd" d="M6 3.5a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-2a.5.5 0 0 0-1 0v2A1.5 1.5 0 0 0 6.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-8A1.5 1.5 0 0 0 5 3.5v2a.5.5 0 0 0 1 0z"/>
-                <path fillRule="evenodd" d="M11.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5H1.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
-              </svg>
-              <span className="ig-left-text">Login</span>
-            </button>
-          )}
-        </nav>
-      </aside>
+      <HomeSidebar
+        centerView={centerView}
+        isLoggedIn={isLoggedIn}
+        onHome={onHome}
+        onPantryNavigate={onPantryNavigate}
+        onRecipesNavigate={onRecipesNavigate}
+        onProfileNavigate={onProfileNavigate}
+        onLogout={onLogout}
+        onLoginNavigate={onLoginNavigate}
+      />
 
       <div className="ig-main-wrap">
         <div className="ig-content-grid">
-          {/* Center column */}
           <section className="ig-center-col">
             {centerView === "pantry" ? (
               <PantryPage token={token} onBack={onHome} onGenerateRecipes={onRecipesNavigate} embedded />
@@ -531,7 +137,7 @@ export function HomeHero({
                 avatarLabel={avatarLabel}
                 displayName={displayName}
                 accountId={accountId}
-                onboardingCompleted={onboardingCompleted}
+                onboardingCompleted={props.onboardingCompleted}
                 onStartOnboarding={() => onRightPanelChange("onboarding-q")}
                 onEditProfile={onEditProfileNavigate}
                 embedded />
@@ -575,76 +181,36 @@ export function HomeHero({
                   ))}
                 </div>
 
-                <article className="ig-post-card">
-                  <div className="ig-post-head">
-                    <div className="ig-avatar ig-avatar-sm">{avatarLabel}</div>
-                    <div>
-                      <h2>{special?.dishName || "A new dish is being prepared"}</h2>
-                      <p>{todayLabel}</p>
-                    </div>
-                  </div>
-                  <div className="ig-post-image-wrap">
-                    <img src={heroImageSrc} alt={special?.dishName || "Today's recipe"} className="ig-post-image" />
-                  </div>
-                  <div className="ig-post-body">
-                    <p className="ig-post-caption">
-                      {special?.description || "A new dish is being prepared. Stay tuned for today's recipe details."}
-                    </p>
-                    <p className="ig-post-meta">
-                      {`${special?.cuisine || "Global Cuisine"} - ${special?.origin || "World Kitchen"}`}
-                    </p>
-                    <ul className="special-lines">
-                      {(["history", "flavor", "origin"] as const).map((row) => (
-                        <li key={row}>
-                          <button className="row-toggle" onClick={() => setOpenRow(openRow === row ? null : row)}>
-                            <span className="row-left" style={{ textTransform: "capitalize" }}>{row}</span>
-                            <span className="row-chevron">{openRow === row ? "^" : "v"}</span>
-                          </button>
-                          {openRow === row && (
-                            <p className="row-content">
-                              {row === "history"
-                                ? special?.history || "No history details yet."
-                                : row === "flavor"
-                                ? special?.description || "Flavor profile not available yet."
-                                : special?.origin || "Origin details not available yet."}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                    {homeLoading && <p className="post-loading-text">Loading today's recipe...</p>}
-                    {homeError && <p className="error">{homeError}</p>}
-                  </div>
-                </article>
+                <DailySpecialCard
+                  special={special}
+                  heroImageSrc={heroImageSrc}
+                  avatarLabel={avatarLabel}
+                  todayLabel={todayLabel}
+                  homeLoading={homeLoading}
+                  homeError={homeError}
+                />
               </>
             )}
           </section>
 
-          {/* Right column — animated panel */}
           <aside className="ig-right-col">
-            {renderRightPanel()}
+            <HomeRightPanel {...props} />
           </aside>
         </div>
       </div>
 
-      {/* Post Composer Modal */}
       {showComposer && (
         <>
-          {/* Backdrop */}
           <div onClick={() => setShowComposer(false)} className="modal-backdrop" />
-
-          {/* Modal */}
           <div className="modal-container">
-            {/* Modal header */}
             <div className="modal-header">
               <span className="modal-title">New Post</span>
               <button onClick={() => setShowComposer(false)} className="modal-close">✕</button>
             </div>
-
             <PostComposer
               token={token}
               pinnedTopic={pinnedTopic}
-              onPostCreated={(post) => {
+              onPostCreated={() => {
                 setShowComposer(false);
                 refresh();
               }}
@@ -653,7 +219,6 @@ export function HomeHero({
           </div>
         </>
       )}
-
     </section>
   );
 }

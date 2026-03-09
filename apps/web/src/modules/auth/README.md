@@ -1,14 +1,14 @@
 # Auth Module
 
-## Responsibility
-- Handle Cognito sign-in/sign-up/confirmation flows.
-- Expose auth pages used by app-level routing.
+Authentication and authorization functionality.
 
-## Public API
-- `LoginPage`
-- `SignUpPage`
-- `signUp`, `confirmSignUp`, `resendCode`, `signIn`
+## Features
+- Cognito signup with email verification
+- Login/logout
+- Auth form components (LoginForm, SignupForm, VerificationForm)
 
-## Dependencies
-- `amazon-cognito-identity-js`
-- Environment variables: `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_APP_CLIENT_ID`
+## Structure
+- `application/` - useAuth hook
+- `infra/` - Cognito API client
+- `model/` - Auth types
+- `ui/` - Auth components and pages

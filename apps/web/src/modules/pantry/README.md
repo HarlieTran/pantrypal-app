@@ -1,20 +1,17 @@
 # Pantry Module
 
-## Responsibility
-Manage pantry items, manual add/remove, and image-driven bulk ingestion.
+Pantry inventory management with receipt scanning.
 
-## Public API
-- `PantryPage`
-- `fetchPantry`
-- `addPantryItem`
-- `addPantryItemsBulk`
-- `updatePantryItem`
-- `deletePantryItem`
-- `getPantryUploadUrl`
-- `parseImageForIngredients`
-- `PantryItem`
-- `PantryMeta`
-- `ParsedIngredient`
+## Features
+- Receipt image upload and parsing
+- Manual item entry
+- Item review and editing
+- Expiry date tracking
+- Item deletion
 
-## Dependencies
-- Backend HTTP API via `infra/pantry.api.ts`
+## Structure
+- `application/` - Pantry management and image parsing hooks
+- `infra/` - Pantry API client
+- `model/` - Pantry types
+- `styles/` - Pantry-specific styles
+- `ui/` - Pantry page and components

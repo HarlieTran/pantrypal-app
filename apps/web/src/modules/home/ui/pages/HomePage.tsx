@@ -1,14 +1,8 @@
 import { HomeHero } from "../components/HomeHero";
 import type { HomeSpecial, PreferenceProfile } from "../../model/home.types";
+import type { ExpiringPreviewItem } from "../../model/home.shared.types";
 import type { RightPanel } from "../../../../app/App";
 import "../../styles/home.css";
-
-type ExpiringPreviewItem = {
-  name: string;
-  expiryDate?: string;
-  daysUntilExpiry?: number;
-  status: "expired" | "expiring_soon";
-};
 
 type HomePageProps = {
   centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community";
@@ -33,6 +27,8 @@ type HomePageProps = {
   code: string;
   token: string;
   onboardingCompleted: boolean;
+  signupStage: 'form' | 'verify';
+  onSetSignupStage: (stage: 'form' | 'verify') => void;
   onEmailChange: (v: string) => void;
   onPasswordChange: (v: string) => void;
   onGivenNameChange: (v: string) => void;

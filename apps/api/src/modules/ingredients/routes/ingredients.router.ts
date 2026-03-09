@@ -1,4 +1,4 @@
-type JsonResponse = { statusCode: number; body: Record<string, unknown> };
+import type { JsonResponse } from "../../../common/routing/helpers.js";
 
 export async function handleIngredientsRoute(
   method: string,

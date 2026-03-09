@@ -1,16 +1,17 @@
 # Recipes Module
 
-## Responsibility
-Fetch recipe suggestions/details and manage recipe cook preview/apply flows.
+AI-powered recipe suggestions based on pantry items.
 
-## Public API
-- `RecipesPage`
-- `fetchRecipeSuggestions`
-- `fetchRecipeDetails`
-- `cookRecipe`
-- `RecipeSuggestion`
-- `RecipeDetails`
-- `CookRecipeResult`
+## Features
+- Recipe generation from pantry items
+- Recipe cards with images and details
+- Recipe detail modal with ingredients and instructions
+- Ingredient chips with pantry matching
+- Recipe regeneration
 
-## Dependencies
-- Backend HTTP API via `infra/recipes.api.ts`
+## Structure
+- `application/` - Recipe suggestions and details hooks
+- `infra/` - Recipes API client
+- `model/` - Recipe types
+- `styles/` - Recipe-specific styles
+- `ui/` - Recipes page and components

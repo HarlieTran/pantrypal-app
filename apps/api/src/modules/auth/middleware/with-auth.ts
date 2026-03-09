@@ -1,7 +1,6 @@
 import { requireAuth } from "./auth.middleware.js";
 import type { AuthClaims } from "../../../common/auth/jwt.js";
-
-type JsonResponse = { statusCode: number; body: Record<string, unknown> };
+import type { JsonResponse } from "../../../common/routing/helpers.js";
 
 type AuthedHandler = (claims: AuthClaims) => Promise<JsonResponse>;
 

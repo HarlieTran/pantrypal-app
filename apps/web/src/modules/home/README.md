@@ -1,13 +1,16 @@
 # Home Module
 
-## Responsibility
-Render the main shell experience, center feed, and right-panel interactions.
+Main application layout and home page.
 
-## Public API
-- `HomePage`
-- `HomeSpecial`
-- `CommunityPost`
-- `PreferenceProfile`
+## Features
+- Instagram-style layout with sidebar navigation
+- Daily special recipe display
+- Right panel (guest, auth, user info)
+- Weekly recipe stories
+- Integrated routing to all modules
 
-## Dependencies
-- Cross-module UI composition (`onboarding`, `pantry`, `recipes`, `profile`) through module public APIs.
+## Structure
+- `model/` - Home types and shared types
+- `styles/` - Home layout and component styles
+- `ui/components/` - Sidebar, panels, daily special card
+- `ui/pages/` - HomePage wrapper
