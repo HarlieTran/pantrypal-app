@@ -5,6 +5,7 @@ import { OnboardingQuestionnaire, RecipePreferencePicker } from "../modules/onbo
 import { HomePage } from "../modules/home";
 import { useIdentity } from "./application/useIdentity";
 import { useHomeAndPantryPreview } from "./application/useHomeAndPantryPreview";
+import { useProfilePageData } from "../modules/profile/application/useProfilePageData";
 
 export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "onboarding-q" | "onboarding-picks";
 
@@ -53,12 +54,16 @@ export function App() {
   const token = session.status === "authenticated" ? session.token : "";
   const sessionSub = session.status === "authenticated" ? session.userId : undefined;
   
+  const { profile } = useProfilePageData(isLoggedIn ? token : "");
+  
   const { displayName, accountId, avatarLabel, sub } = useIdentity({
     email,
     givenName,
     familyName,
     isLoggedIn,
     sub: sessionSub,
+    profileDisplayName: profile?.displayName,
+    profileEmail: profile?.email,
   });
   
   const { special, heroImageSrc, homeLoading, homeError, expiringItems } = useHomeAndPantryPreview(

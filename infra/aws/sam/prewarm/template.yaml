@@ -43,7 +43,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "pantrypal-prewarm-${Stage}"
-      CodeUri: ../../../.aws-sam/build-prewarm/PrewarmFunction
+      CodeUri: ../../../../.aws-sam/build-prewarm/PrewarmFunction
       Handler: index.handler
       Runtime: nodejs22.x
       Architectures: [arm64]

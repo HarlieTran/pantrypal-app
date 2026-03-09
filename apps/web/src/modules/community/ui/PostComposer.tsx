@@ -55,27 +55,12 @@ export function PostComposer({ token, pinnedTopic, onPostCreated, onCancel }: Pr
   }
 
   return (
-    <div style={{
-      borderBottom: "1px solid #f0f0f0",
-      padding: "16px",
-      background: "#fff",
-    }}>
+    <div className="post-composer">
       {/* Topic reply toggle */}
       {pinnedTopic && (
         <button
           onClick={() => setReplyToTopic((v) => !v)}
-          style={{
-            marginBottom: "12px",
-            fontSize: "13px",
-            color: replyToTopic ? "#e53935" : "#999",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
+          className={`post-composer-topic-toggle ${replyToTopic ? 'is-active' : ''}`}
         >
           {replyToTopic ? "✦ Replying to today's topic" : "› Reply to today's topic"}
         </button>
@@ -87,53 +72,14 @@ export function PostComposer({ token, pinnedTopic, onPostCreated, onCancel }: Pr
         onChange={(e) => setCaption(e.target.value)}
         placeholder="Share something from your kitchen..."
         rows={3}
-        style={{
-          width: "100%",
-          border: "none",
-          outline: "none",
-          resize: "none",
-          fontSize: "15px",
-          fontFamily: "inherit",
-          color: "#1a1a1a",
-          lineHeight: "1.5",
-          boxSizing: "border-box",
-        }}
+        className="post-composer-textarea"
       />
 
       {/* Image preview */}
       {imagePreview && (
-        <div style={{ position: "relative", marginTop: "10px", display: "inline-block" }}>
-          <img
-            src={imagePreview}
-            alt="preview"
-            style={{
-              width: "100%",
-              maxHeight: "280px",
-              objectFit: "cover",
-              borderRadius: "12px",
-            }}
-          />
-          <button
-            onClick={removeImage}
-            style={{
-              position: "absolute",
-              top: "8px",
-              right: "8px",
-              background: "rgba(0,0,0,0.5)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "50%",
-              width: "28px",
-              height: "28px",
-              cursor: "pointer",
-              fontSize: "14px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            ✕
-          </button>
+        <div className="post-composer-image-preview">
+          <img src={imagePreview} alt="preview" className="post-composer-image" />
+          <button onClick={removeImage} className="post-composer-image-remove">✕</button>
         </div>
       )}
 
@@ -142,40 +88,14 @@ export function PostComposer({ token, pinnedTopic, onPostCreated, onCancel }: Pr
         value={tags}
         onChange={(e) => setTags(e.target.value)}
         placeholder="Add tags — garlic, pasta, vegan"
-        style={{
-          marginTop: "10px",
-          width: "100%",
-          border: "none",
-          outline: "none",
-          fontSize: "13px",
-          color: "#888",
-          fontFamily: "inherit",
-          boxSizing: "border-box",
-        }}
+        className="post-composer-tags-input"
       />
 
       {/* Actions row */}
-      <div style={{
-        marginTop: "12px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-      }}>
-        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+      <div className="post-composer-actions">
+        <div className="post-composer-actions-left">
           {/* Image attach */}
-          <label
-            style={{
-              cursor: "pointer",
-              fontSize: "13px",
-              color: "#888",
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              padding: "6px 10px",
-              border: "1px solid #e8e8e8",
-              borderRadius: "8px",
-            }}
-          >
+          <label className="post-composer-attach-label">
             📷 Photo
             <input
               ref={fileInputRef}
@@ -187,40 +107,17 @@ export function PostComposer({ token, pinnedTopic, onPostCreated, onCancel }: Pr
           </label>
 
           {onCancel && (
-            <button
-              onClick={onCancel}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "13px",
-                color: "#aaa",
-              }}
-            >
-              Cancel
-            </button>
+            <button onClick={onCancel} className="post-composer-cancel">Cancel</button>
           )}
         </div>
 
-        {error && (
-          <span style={{ fontSize: "12px", color: "#e53935" }}>{error}</span>
-        )}
+        {error && <span className="post-composer-error">{error}</span>}
 
         {/* Post button */}
         <button
           onClick={handleSubmit}
           disabled={loading || !caption.trim()}
-          style={{
-            background: caption.trim() ? "#e53935" : "#f5f5f5",
-            color: caption.trim() ? "#fff" : "#ccc",
-            border: "none",
-            borderRadius: "20px",
-            padding: "8px 20px",
-            fontSize: "14px",
-            fontWeight: 600,
-            cursor: caption.trim() ? "pointer" : "default",
-            transition: "background 0.15s",
-          }}
+          className={`post-composer-submit ${caption.trim() ? 'is-active' : ''}`}
         >
           {loading ? "Posting..." : "Post"}
         </button>

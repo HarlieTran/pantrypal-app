@@ -50,9 +50,9 @@ export function CommentSection({
   if (!isOpen) return null;
 
   return (
-    <div style={{ paddingLeft: 52, paddingBottom: 12 }}>
+    <div className="comment-section">
       {isLoading ? (
-        <p style={{ fontSize: 13, color: "#999" }}>Loading comments...</p>
+        <p className="comment-section-loading">Loading comments...</p>
       ) : (
         <>
           {visible.map((comment) => {
@@ -62,52 +62,20 @@ export function CommentSection({
               : false;
 
             return (
-              <div
-                key={comment.commentId}
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  marginBottom: 10,
-                }}
-              >
+              <div key={comment.commentId} className="comment-item">
                 {/* Avatar */}
-                <div
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "#e0e0e0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: "#555",
-                    flexShrink: 0,
-                  }}
-                >
-                  {comment.avatarLabel}
-                </div>
+                <div className="comment-avatar">{comment.avatarLabel}</div>
 
                 {/* Comment body */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, lineHeight: 1.4 }}>
-                    <span style={{ fontWeight: 600, marginRight: 6 }}>
-                      {comment.displayName}
-                    </span>
+                <div className="comment-body">
+                  <div className="comment-content">
+                    <span className="comment-author">{comment.displayName}</span>
                     {comment.content}
                   </div>
 
                   {/* Actions row */}
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      marginTop: 4,
-                      alignItems: "center",
-                    }}
-                  >
-                    <span style={{ fontSize: 11, color: "#999" }}>
+                  <div className="comment-actions">
+                    <span className="comment-date">
                       {new Date(comment.createdAt).toLocaleDateString()}
                     </span>
 
@@ -115,37 +83,17 @@ export function CommentSection({
                     <button
                       onClick={() => likeComment(comment.commentId)}
                       disabled={!token}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        cursor: token ? "pointer" : "default",
-                        padding: 0,
-                        fontSize: 12,
-                        color: hasLiked ? "#e0245e" : "#999",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 3,
-                      }}
+                      className={`comment-like-btn ${hasLiked ? 'is-liked' : ''}`}
                     >
-                      
                       {hasLiked ? "♥" : "♡"}
-                      {comment.likeCount > 0 && (
-                        <span>{comment.likeCount}</span>
-                      )}
+                      {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
                     </button>
 
                     {/* Delete — own comments only */}
                     {isOwner && (
                       <button
                         onClick={() => remove(comment.commentId, comment.userId)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: 0,
-                          fontSize: 12,
-                          color: "#999",
-                        }}
+                        className="comment-delete-btn"
                       >
                         Delete
                       </button>
@@ -158,51 +106,25 @@ export function CommentSection({
 
           {/* Expand / collapse */}
           {!isExpanded && hiddenCount > 0 && (
-            <button
-              onClick={() => setIsExpanded(true)}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                fontSize: 13,
-                color: "#999",
-                padding: "4px 0",
-              }}
-            >
+            <button onClick={() => setIsExpanded(true)} className="comment-expand-btn">
               View {hiddenCount} more comment{hiddenCount !== 1 ? "s" : ""}
             </button>
           )}
 
           {/* Add comment input — auth only */}
           {token && (
-            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <div className="comment-input-wrap">
               <input
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
                 placeholder="Add a comment..."
-                style={{
-                  flex: 1,
-                  border: "none",
-                  borderBottom: "1px solid #efefef",
-                  outline: "none",
-                  fontSize: 13,
-                  padding: "4px 0",
-                  background: "transparent",
-                }}
+                className="comment-input"
               />
               <button
                 onClick={submit}
                 disabled={isSubmitting || !newComment.trim()}
-                style={{
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  color: newComment.trim() ? "#0095f6" : "#b2dffc",
-                  fontWeight: 600,
-                  padding: 0,
-                }}
+                className={`comment-submit-btn ${newComment.trim() ? 'is-active' : ''}`}
               >
                 {isSubmitting ? "..." : "Post"}
               </button>

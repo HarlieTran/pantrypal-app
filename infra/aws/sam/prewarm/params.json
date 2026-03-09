@@ -1,0 +1,34 @@
+[
+  {
+    "ParameterKey": "Stage",
+    "ParameterValue": "dev"
+  },
+  {
+    "ParameterKey": "DatabaseUrl",
+    "ParameterValue": "postgresql://postgres:0abP11KGj17je11qkBbp@pantrypal-db.ct2yqko6s3so.us-east-2.rds.amazonaws.com:5432/postgres?schema=pantrypal_app"
+  },
+  {
+    "ParameterKey": "UnsplashAccessKey",
+    "ParameterValue": "1h_HIcTMXZkhJv56PHKSpc7dDiHzNw4MKslPhO9Z6RU"
+  },
+  {
+    "ParameterKey": "S3BucketDailySpecials",
+    "ParameterValue": "pantrypal-daily-specials"
+  },
+  {
+    "ParameterKey": "CommunityPostsTable",
+    "ParameterValue": "pantrypal-community-posts"
+  },
+  {
+    "ParameterKey": "CommunityTopicsTable",
+    "ParameterValue": "pantrypal-community-topics"
+  },
+  {
+    "ParameterKey": "BedrockModelId",
+    "ParameterValue": "arn:aws:bedrock:us-east-2:175948132683:inference-profile/us.amazon.nova-2-lite-v1:0"
+  },
+  {
+    "ParameterKey": "PrewarmSchedule",
+    "ParameterValue": "cron(1 0 * * ? *)"
+  }
+]

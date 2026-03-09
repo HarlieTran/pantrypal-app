@@ -1,6 +1,6 @@
 @echo off
 REM Build script for prewarm Lambda using esbuild
-REM Run from repo root: infra\aws\sam\build-prewarm.bat
+REM Run from repo root: infra\aws\sam\prewarm\build.bat
 
 echo Building prewarm Lambda for deployment...
 echo.

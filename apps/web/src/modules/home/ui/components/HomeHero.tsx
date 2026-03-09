@@ -448,7 +448,7 @@ export function HomeHero({
         <div className="ig-left-logo">PantryPal</div>
         <nav className="ig-left-nav" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {/* Home — always visible */}
-          <button className="ig-left-link is-active" onClick={onHome}>
+          <button className={`ig-left-link${centerView === "home" ? " is-active" : ""}`} onClick={onHome}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/>
             </svg>
@@ -458,7 +458,7 @@ export function HomeHero({
           {isLoggedIn ? (
             <>
               {/* Pantry */}
-              <button className="ig-left-link" onClick={onPantryNavigate}>
+              <button className={`ig-left-link${centerView === "pantry" ? " is-active" : ""}`} onClick={onPantryNavigate}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6-.354.353V14.5A1.5 1.5 0 0 0 2.5 16h11a1.5 1.5 0 0 0 1.5-1.5V7.5l-.354-.354zM11 13H9v-2H7v2H5V7.207l3-3 3 3z"/>
                 </svg>
@@ -466,7 +466,7 @@ export function HomeHero({
               </button>
 
               {/* Recipes */}
-              <button className="ig-left-link" onClick={onRecipesNavigate}>
+              <button className={`ig-left-link${centerView === "recipes" ? " is-active" : ""}`} onClick={onRecipesNavigate}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M3 2a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v11.5a.5.5 0 0 1-.777.416L8 11.101l-4.223 2.815A.5.5 0 0 1 3 13.5zm1 0v10.566l3.723-2.482a.5.5 0 0 1 .554 0L12 12.566V2z"/>
                 </svg>
@@ -482,7 +482,7 @@ export function HomeHero({
               </button>
 
               {/* Profile */}
-              <button className="ig-left-link" onClick={onProfileNavigate}>
+              <button className={`ig-left-link${centerView === "profile" || centerView === "edit-profile" ? " is-active" : ""}`} onClick={onProfileNavigate}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
                 </svg>

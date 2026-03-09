@@ -19,15 +19,7 @@ type Props = {
 
 export function WeeklyStoryCircles({ topics, selectedDate, onSelect }: Props) {
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      gap: "16px",
-      padding: "14px 12px",
-      background: "#fff",
-      borderBottom: "1px solid #efefef",
-      overflowX: "auto",
-    }}>
+    <div className="weekly-circles">
       {topics.map((topic) => {
         const today = isToday(topic.date);
         const selected = selectedDate === topic.date;
@@ -37,49 +29,26 @@ export function WeeklyStoryCircles({ topics, selectedDate, onSelect }: Props) {
         return (
           <article
             key={topic.date}
-            style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", cursor: "pointer", flexShrink: 0 }}
+            className="weekly-circle-item"
             onClick={() => onSelect(selected ? null : topic.date)}
           >
             {/* Ring */}
-            <div style={{
-              width: "62px",
-              height: "62px",
-              borderRadius: "50%",
-              padding: "2px",
-              background: today || selected
-                ? "linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5)"
-                : "#dbdbdb",
-              transition: "background 0.2s",
-            }}>
-              <div style={{
-                width: "100%",
-                height: "100%",
-                borderRadius: "50%",
-                border: "2px solid #fff",
-                overflow: "hidden",
-                background: "#f5f5f5",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
+            <div className={`weekly-circle-ring ${today || selected ? 'is-today' : ''}`}>
+              <div className="weekly-circle-inner">
                 {hasImage ? (
                   <img
                     src={topic.imageUrl!}
                     alt={topic.title ?? label}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    className="weekly-circle-image"
                   />
                 ) : (
-                  <span style={{ fontSize: "22px" }}>🍽️</span>
+                  <span className="weekly-circle-emoji">🍽️</span>
                 )}
               </div>
             </div>
 
             {/* Label */}
-            <span style={{
-              fontSize: "12px",
-              fontWeight: today ? 700 : 400,
-              color: today ? "#262626" : "#737373",
-            }}>
+            <span className={`weekly-circle-label ${today ? 'is-today' : ''}`}>
               {today ? "Today" : label}
             </span>
           </article>

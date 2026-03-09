@@ -719,44 +719,38 @@ input::placeholder {
   position: sticky;
   top: 0;
   left: 0;
-  width: 100%;
-  max-width: none;
+  width: fit-content;
   min-width: 76px;
   height: 100vh;
   background: #fff;
-  /* border-right: 1px solid #dbdbdb; */
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  /* justify-content: center; */
+  align-items: center;
   gap: 24px;
-  padding: 40px 20px;
+  padding: 40px 12px;
   z-index: 30;
-  transition: width 0.22s ease;
+  transition: all 0.22s ease;
   overflow: visible;
 }
 
 .ig-left-rail:hover {
-  width: 20vw;
+  width: fit-content;
+  min-width: 200px;
   padding: 40px 20px;
-  text-align: left;
+  align-items: stretch;
 }
 
 .ig-left-logo {
-  /* Font Choice */
-    font-family: 'Lobster', 'Billabong', cursive;
-    font-size: 22px;
-  
-    /* Applying the Gradient (as seen in your third uploaded image) */
-    background: var(--ig-brand-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  
-    /* Fine-tuning */
-    letter-spacing: 1px;
-    font-weight: 400;
-    display: inline-block;
-    text-align: center;
+  font-family: 'Lobster', 'Billabong', cursive;
+  font-size: 22px;
+  background: var(--ig-brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+  font-weight: 400;
+  display: inline-block;
+  text-align: center;
+  width: 100%;
 }
 
 .ig-left-nav {
@@ -767,16 +761,27 @@ input::placeholder {
 }
 
 .ig-left-link {
-  padding: 8px 10px;
+  padding: 12px;
   border-radius: 8px;
-  color: #262626;
+  color: #5a5a5a;
   font-size: 14px;
   font-weight: 600;
-  text-align: left;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   width: 100%;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.ig-left-link:hover {
+  color: #dc2743;
+  transform: translateY(-3px);
+  animation: ig-btn-jump 0.3s ease;
+}
+
+.ig-left-rail:hover .ig-left-link {
+  justify-content: flex-start;
 }
 
 .ig-left-icon {
@@ -787,23 +792,15 @@ input::placeholder {
 
 .ig-left-text {
   opacity: 0;
-  max-width: 0;
+  width: 0;
+  overflow: hidden;
   white-space: nowrap;
-  transition: opacity 0.18s ease, max-width 0.2s ease;
+  transition: opacity 0.22s ease, width 0.22s ease;
 }
 
 .ig-left-rail:hover .ig-left-text {
   opacity: 1;
-  max-width: 80px;
-  text-align: left;
-}
-
-.ig-left-link:hover {
-  background: #efefef;
-}
-
-.ig-left-link.is-active {
-  background: #efefef;
+  width: auto;
 }
 
 .ig-main-wrap {

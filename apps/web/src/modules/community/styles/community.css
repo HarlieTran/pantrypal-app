@@ -35,7 +35,7 @@
 }
 
 .community-post-thread-line {
-  width: 2px;
+  width: 1px;
   flex: 1;
   background: #efefef;
   border-radius: 1px;
@@ -104,7 +104,7 @@
 }
 
 .community-post-image-wrap {
-  border-radius: 12px;
+  border-radius: 5px;
   overflow: hidden;
   margin-bottom: 10px;
 }
@@ -158,6 +158,26 @@
 
 .community-post-action-btn:disabled {
   cursor: default;
+}
+
+.community-post-comment-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #555;
+}
+
+.community-post-comment-btn.is-active {
+  color: #0095f6;
+}
+
+.community-post-comment-count {
+  font-size: 13px;
+  color: #999;
 }
 
 .community-thread-group {
@@ -241,6 +261,27 @@
   margin-top: 8px;
 }
 
+.community-feed-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.community-feed-loading {
+  padding: 40px;
+  text-align: center;
+  color: #737373;
+  font-size: 14px;
+}
+
+.community-feed-error {
+  padding: 18px;
+  border: 1px solid #f2c6cb;
+  background: #fce4ec;
+  border-radius: 12px;
+  color: #b71c1c;
+  font-size: 13px;
+}
+
 
 /* ─── Post Composer Styles ───────────────────────────────────────────────── */
 
@@ -289,7 +330,7 @@
   width: 100%;
   max-height: 280px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 5px;
 }
 
 .post-composer-image-remove {
@@ -299,7 +340,7 @@
   background: rgba(0,0,0,0.5);
   color: #fff;
   border: none;
-  border-radius: 50%;
+  border-radius: 5px;
   width: 28px;
   height: 28px;
   cursor: pointer;
@@ -397,7 +438,7 @@
 .comment-avatar {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 5px;
   background: #e0e0e0;
   display: flex;
   align-items: center;
@@ -511,7 +552,6 @@
   gap: 16px;
   padding: 14px 12px;
   background: #fff;
-  border-bottom: 1px solid #efefef;
   overflow-x: auto;
 }
 

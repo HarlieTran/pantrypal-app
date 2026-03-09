@@ -107,84 +107,40 @@ function PostCard({ post, showThreadLine = true, token, isLoggedIn, currentUserI
   const isSystem = (post as any).isSystemPost === true || post.userId === "pantrypal-system";
 
   return (
-    <article style={{
-      padding: "16px 0",
-      borderBottom: "1px solid #efefef",
-      display: "flex",
-      gap: "12px",
-    }}>
+    <article className="community-post">
       {/* Left — avatar column */}
-      <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-        <div style={{
-          width: "40px",
-          height: "40px",
-          borderRadius: "50%",
-          background: isSystem
-            ? "linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5)"
-            : "#efefef",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: isSystem ? "#fff" : "#262626",
-          fontSize: "13px",
-          fontWeight: 700,
-          flexShrink: 0,
-        }}>
+      <div className="community-post-avatar-col">
+        <div className={`community-post-avatar ${isSystem ? 'is-system' : ''}`}>
           {isSystem ? "✦" : avatarInitials(post.authorDisplayName ?? post.displayName)}
         </div>
         {/* Thread line */}
-        {showThreadLine && (
-          <div style={{ width: "2px", flex: 1, background: "#efefef", borderRadius: "1px", minHeight: "20px" }} />
-        )}
+        {showThreadLine && <div className="community-post-thread-line" />}
       </div>
 
       {/* Right — content column */}
-      <div style={{ flex: 1, minWidth: 0, paddingBottom: "8px" }}>
-
+      <div className="community-post-content">
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-          <span style={{ fontSize: "14px", fontWeight: 700, color: "#262626" }}>
+        <div className="community-post-header">
+          <span className="community-post-author">
             {post.authorDisplayName ?? post.displayName}
           </span>
-          {isSystem && (
-            <span style={{
-              fontSize: "10px",
-              fontWeight: 700,
-              color: "#dc2743",
-              background: "#fff0f3",
-              padding: "1px 6px",
-              borderRadius: "999px",
-              border: "1px solid #ffc2cc",
-            }}>
-              official
-            </span>
-          )}
+          {isSystem && <span className="community-post-badge">official</span>}
           {post.topicId && (
-            <span style={{ fontSize: "13px", color: "#a8a8a8" }}>
-              › <span style={{ color: "#dc2743", fontWeight: 600 }}>today's topic</span>
+            <span className="community-post-topic-label">
+              › <span>today's topic</span>
             </span>
           )}
-          <span style={{ fontSize: "12px", color: "#a8a8a8", marginLeft: "auto" }}>
-            {timeAgo(post.createdAt)}
-          </span>
-          <button style={{ color: "#a8a8a8", fontSize: "16px", padding: "0 4px", background: "none", border: "none", cursor: "pointer" }}>
-            ···
-          </button>
+          <span className="community-post-time">{timeAgo(post.createdAt)}</span>
+          <button className="community-post-menu">···</button>
         </div>
 
         {/* Caption */}
-        <p style={{ margin: "0 0 10px", fontSize: "14px", color: "#262626", lineHeight: 1.5 }}>
-          {post.caption}
-        </p>
+        <p className="community-post-caption">{post.caption}</p>
 
         {/* Image */}
         {post.imageUrl && (
-          <div style={{ borderRadius: "12px", overflow: "hidden", marginBottom: "10px" }}>
-            <img
-              src={post.imageUrl}
-              alt="post"
-              style={{ width: "100%", display: "block", maxHeight: "400px", objectFit: "cover" }}
-            />
+          <div className="community-post-image-wrap">
+            <img src={post.imageUrl} alt="post" className="community-post-image" />
           </div>
         )}
 
@@ -199,57 +155,29 @@ function PostCard({ post, showThreadLine = true, token, isLoggedIn, currentUserI
               ].filter(Boolean) as string[];
 
           return flatTags.length > 0 ? (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "10px" }}>
+            <div className="community-post-tags">
               {flatTags.map((tag) => (
-                <span key={tag} style={{
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#0095f6",
-                }}>
-                  #{tag}
-                </span>
+                <span key={tag} className="community-post-tag">#{tag}</span>
               ))}
             </div>
           ) : null;
         })()}
 
         {/* Footer — likes + comments */}
-        <div style={{ display: "flex", gap: "16px", marginTop: "8px" }}>
+        <div className="community-post-actions">
           <button
             onClick={handleLike}
             disabled={!isLoggedIn || liking}
-            style={{
-              fontSize: "13px",
-              color: liked ? "#e53935" : "#737373",
-              background: "none",
-              border: "none",
-              cursor: isLoggedIn ? "pointer" : "default",
-              padding: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              transition: "color 0.15s",
-            }}
+            className={`community-post-action-btn ${liked ? 'is-liked' : ''}`}
           >
             {liked ? "♥" : "♡"} <span>{likeCount}</span>
           </button>
           <button
             onClick={() => setCommentsOpen((prev) => !prev)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 20,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-              color: commentsOpen ? "#0095f6" : "#555",
-            }}
+            className={`community-post-comment-btn ${commentsOpen ? 'is-active' : ''}`}
           >
             💬
-            {commentCount > 0 && (
-              <span style={{ fontSize: 13, color: "#999" }}>{commentCount}</span>
-            )}
+            {commentCount > 0 && <span className="community-post-comment-count">{commentCount}</span>}
           </button>
         </div>
         
@@ -280,12 +208,12 @@ function ThreadGroupCard({ group, token, isLoggedIn, currentUserId }: {
   const visibleReplies = expanded ? group.replies : group.replies.slice(0, 2);
 
   return (
-    <div style={{ borderBottom: "1px solid #efefef", paddingBottom: "8px" }}>
+    <div className="community-thread-group">
       {/* Root post — clickable to expand */}
-      <div onClick={() => setExpanded((v) => !v)} style={{ cursor: "pointer" }}>
+      <div onClick={() => setExpanded((v) => !v)} className="community-thread-root">
         <PostCard 
           post={group.root} 
-          showThreadLine={group.replies.length > 0} 
+          showThreadLine={group.replies.length >= 0} 
           token={token} 
           isLoggedIn={isLoggedIn}
           currentUserId={currentUserId} />
@@ -293,7 +221,7 @@ function ThreadGroupCard({ group, token, isLoggedIn, currentUserId }: {
 
       {/* Replies */}
       {visibleReplies.map((reply, i) => (
-        <div key={reply.postId} style={{ paddingLeft: "52px" }}>
+        <div key={reply.postId} className="community-thread-reply">
           <PostCard
             post={reply}
             showThreadLine={i < visibleReplies.length - 1}
@@ -306,23 +234,8 @@ function ThreadGroupCard({ group, token, isLoggedIn, currentUserId }: {
 
       {/* View all / collapse toggle */}
       {group.replies.length > 2 && (
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          style={{
-            marginLeft: "52px",
-            marginTop: "6px",
-            fontSize: "13px",
-            fontWeight: 600,
-            color: "#0095f6",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-          }}
-        >
-          {expanded
-            ? "Collapse replies"
-            : `View all ${group.replies.length} replies`}
+        <button onClick={() => setExpanded((v) => !v)} className="community-thread-toggle">
+          {expanded ? "Collapse replies" : `View all ${group.replies.length} replies`}
         </button>
       )}
     </div>
@@ -361,49 +274,20 @@ export function CommunityFeed({
   onCreatePost,
 }: CommunityFeedProps) {
   if (loading) {
-    return (
-      <div style={{ padding: "40px", textAlign: "center", color: "#737373", fontSize: "14px" }}>
-        Loading community...
-      </div>
-    );
+    return <div className="community-feed-loading">Loading community...</div>;
   }
 
   if (error) {
-    return (
-      <div style={{ padding: "18px", border: "1px solid #f2c6cb", background: "#fce4ec", borderRadius: "12px", color: "#b71c1c", fontSize: "13px" }}>
-        {error}
-      </div>
-    );
+    return <div className="community-feed-error">{error}</div>;
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column" }}>
-
+    <div className="community-feed-container">
       {/* Create post trigger — authenticated only */}
       {isLoggedIn && onCreatePost && (
-        <button
-          onClick={onCreatePost}
-          style={{
-            width: "100%",
-            padding: "12px 16px",
-            border: "1px solid #f0f0f0",
-            borderRadius: "12px",
-            background: "#fafafa",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            cursor: "pointer",
-            marginBottom: "8px",
-          }}
-        >
-          <div style={{
-            width: "36px",
-            height: "36px",
-            borderRadius: "50%",
-            background: "#e8e8e8",
-            flexShrink: 0,
-          }} />
-          <span style={{ fontSize: "14px", color: "#aaa", textAlign: "left" }}>
+        <button onClick={onCreatePost} className="community-feed-create-post">
+          <div className="community-feed-create-avatar" />
+          <span className="community-feed-create-placeholder">
             Share something from your kitchen...
           </span>
         </button>
@@ -411,15 +295,8 @@ export function CommunityFeed({
 
       {/* Guest CTA */}
       {!isLoggedIn && (
-        <div style={{
-          padding: "12px 0",
-          borderBottom: "1px solid #efefef",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "12px",
-        }}>
-          <p style={{ margin: 0, fontSize: "13px", color: "#737373" }}>
+        <div className="community-feed-guest-cta">
+          <p className="community-feed-guest-text">
             Log in to get a personalized feed based on your taste profile.
           </p>
           <button className="btn-primary" onClick={onLoginNavigate}>
@@ -430,7 +307,7 @@ export function CommunityFeed({
 
       {/* Posts */}
       {posts.length === 0 ? (
-        <div style={{ padding: "40px", textAlign: "center", color: "#737373", fontSize: "14px" }}>
+        <div className="community-feed-empty">
           No posts yet. Be the first to share something!
         </div>
       ) : (
@@ -456,10 +333,9 @@ export function CommunityFeed({
       {/* Load more */}
       {nextCursor && (
         <button
-          className="btn-primary"
+          className="btn-primary community-feed-load-more"
           onClick={onLoadMore}
           disabled={loadingMore}
-          style={{ width: "100%", justifyContent: "center", padding: "12px", marginTop: "8px" }}
         >
           {loadingMore ? "Loading..." : "Load more"}
         </button>
