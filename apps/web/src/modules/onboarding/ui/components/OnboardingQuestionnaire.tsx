@@ -20,30 +20,24 @@ export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
     }
   };
 
-  if (loading) return <p style={{ color: "var(--muted)", fontSize: "13px" }}>Loading questions…</p>;
+  if (loading) return <p className="onboarding-loading">Loading questions…</p>;
 
   return (
     <div>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+      <div className="onboarding-header">
         <div>
-          <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--muted)", margin: 0 }}>
-            Step 1 of 2
-          </p>
-          <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "2px 0 0", letterSpacing: "-0.3px" }}>
-            Your preferences
-          </h3>
+          <p className="onboarding-step-label">Step 1 of 2</p>
+          <h3 className="onboarding-title">Your preferences</h3>
         </div>
       </div>
 
-      <div style={{ display: "grid", gap: "16px", maxHeight: "60vh", overflowY: "auto", paddingRight: "4px" }}>
+      <div className="onboarding-questions">
         {mainQuestions.map((q) => {
           const a = answers[q.key] ?? { optionValues: [], answerText: "" };
           return (
             <div key={q.id}>
-              <p style={{ fontSize: "12px", fontWeight: 700, color: "var(--ink-secondary)", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                {q.label}
-              </p>
+              <p className="onboarding-question-label">{q.label}</p>
 
               {q.type === QUESTION_TYPES.FREE_TEXT && (
                 <textarea
@@ -51,29 +45,19 @@ export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
                   value={a.answerText}
                   onChange={(e) => setText(q.key, e.target.value)}
                   placeholder="Type your answer"
-                  style={{ width: "100%", fontSize: "13px", resize: "none" }}
+                  className="onboarding-textarea"
                 />
               )}
 
               {(q.type === QUESTION_TYPES.MULTI_CHOICE || q.type === QUESTION_TYPES.SINGLE_CHOICE) && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                <div className="onboarding-options">
                   {q.options.map((opt) => {
                     const selected = a.optionValues.includes(opt.value);
                     return (
                       <button
                         key={opt.id}
                         onClick={() => toggleMulti(q.key, opt.value)}
-                        style={{
-                          padding: "5px 12px",
-                          borderRadius: "999px",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          border: selected ? "1.5px solid #dc2743" : "1.5px solid var(--line)",
-                          background: selected ? "#fff0f3" : "var(--panel)",
-                          color: selected ? "#dc2743" : "var(--ink-secondary)",
-                          transition: "all 0.15s",
-                        }}
+                        className={`onboarding-option-btn ${selected ? 'is-selected' : ''}`}
                       >
                         {opt.label}
                       </button>
@@ -86,19 +70,10 @@ export function OnboardingQuestionnaire({ token, onCompleted, onBack }: Props) {
         })}
       </div>
 
-      {error && <p style={{ fontSize: "12px", color: "var(--error)", marginTop: "10px" }}>{error}</p>}
+      {error && <p className="onboarding-error">{error}</p>}
 
-      <button 
-        className="btn-secondary"
-        onClick={onBack} >
-          ← Back
-      </button>
-      
-      <button
-        className="btn-primary"
-        onClick={onSave}
-        disabled={saving}
-      >
+      <button className="btn-secondary" onClick={onBack}>← Back</button>
+      <button className="btn-primary" onClick={onSave} disabled={saving}>
         {saving ? "Saving…" : "Next →"}
       </button>
     </div>

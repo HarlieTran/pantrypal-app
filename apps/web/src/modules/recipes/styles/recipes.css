@@ -123,3 +123,8 @@
   display: grid;
   gap: 4px;
 }
+
+.ig-recipes-shell {
+  display: grid;
+  gap: 16px;
+}

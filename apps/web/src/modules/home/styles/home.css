@@ -2,7 +2,7 @@
 
 /* Instagram Web landing overrides */
 :root {
-  --ig-gradient: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+  --ig-gradient: linear-gradient(135deg, #701d75, #cc0325);
 }
 
 .hero {
@@ -206,7 +206,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+  background: linear-gradient(135deg, #701d75, #cc0325);
   padding: 2px;
 }
 
@@ -310,7 +310,6 @@
 }
 
 .ig-user-box,
-.ig-suggest-box,
 .ig-guest-box {
   background: transparent;
   border: none;
@@ -318,10 +317,17 @@
   padding: 0;
 }
 
+.ig-suggest-box {
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  padding-top: 20px;
+}
+
 .ig-guest-box h3 {
   font-family: 'Lobster', 'Billabong', cursive;
   font-size: 20px;
-  background: -webkit-linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  background: -webkit-linear-gradient(135deg, #701d75, #cc0325);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: 1px;
@@ -358,7 +364,7 @@
 .ig-suggest-head h3,
 .ig-guest-box h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .ig-plain-link {
@@ -417,13 +423,330 @@
   color: #737373;
   font-size: 13px;
   line-height: 1.45;
-  margin-bottom: 10px;
+  margin-bottom: 30px;
+  min-height: 36px;
+}
+
+.typing-cursor {
+  animation: blink 1s infinite;
+  color: #dc2743;
+  font-weight: 700;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
 }
 
 .ig-steps {
   color: #262626;
   font-size: 13px;
   margin-bottom: 12px;
+}
+
+.ig-steps-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.ig-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.ig-step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #701d75, #cc0325) border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  animation: scaleIn 0.4s ease forwards;
+}
+
+.ig-step-item:nth-child(1) .ig-step-icon {
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+
+.ig-step-item:nth-child(3) .ig-step-icon {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.ig-step-item:nth-child(5) .ig-step-icon {
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+
+.ig-step-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #262626;
+  text-align: center;
+}
+
+.ig-step-arrow {
+  color: #dc2743;
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 -4px;
+  padding-bottom: 20px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ig-user-box {
+  margin-bottom: 20px;
+}
+
+.ig-left-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Auth Panel Styles ──────────────────────────────────────────────────── */
+
+.auth-panel-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.auth-panel-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.auth-panel-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  letter-spacing: -0.3px;
+}
+
+.auth-panel-grid {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.auth-panel-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.auth-panel-error {
+  font-size: 13px;
+  color: var(--error);
+  margin-bottom: 10px;
+}
+
+.auth-panel-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.auth-panel-actions-row .btn-primary,
+.auth-panel-actions-row .btn-secondary {
+  flex: 1;
+}
+
+.auth-panel-footer {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.auth-panel-link {
+  color: var(--accent);
+  fontWeight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+}
+
+.auth-panel-secondary-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.auth-panel-secondary-link {
+  color: var(--muted);
+  font-size: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-panel-divider {
+  color: var(--line);
+}
+
+.success-panel {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #701d75, #cc0325);
+  display: flex;
+  align-items: center;
+  justifyContent: center;
+  margin: 0 auto 16px;
+  font-size: 24px;
+}
+
+.success-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.success-text {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.user-panel-logout {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.onboarding-cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  border-radius: 5px;
+  border: 1px dashed #dc2743;
+  background: #fff5f7;
+  color: #dc2743;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.onboarding-cta:hover {
+  background: #ffe0e8;
+}
+
+.onboarding-cta-icon {
+  font-size: 16px;
+}
+
+.left-nav-logout {
+  margin-top: auto;
+}
+
+.post-loading-text {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* ─── Modal Styles ───────────────────────────────────────────────────────── */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+}
+
+.modal-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(540px, 95vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  z-index: 101;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  z-index: 1;
+}
+
+.modal-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #999;
+  line-height: 1;
 }
 
 @media (max-width: 920px) {

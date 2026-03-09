@@ -6,10 +6,13 @@ import { HomePage } from "../modules/home";
 import { useIdentity } from "./application/useIdentity";
 import { useHomeAndPantryPreview } from "./application/useHomeAndPantryPreview";
 import { useProfilePageData } from "../modules/profile/application/useProfilePageData";
+import "./styles/app.css";
+import { useState } from "react";
 
 export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "onboarding-q" | "onboarding-picks";
 
 export function App() {
+  const [signupStage, setSignupStage] = useState<'form' | 'verify'>('form');
   const { session, login, logout } = useSession();
   
   const {
@@ -52,7 +55,7 @@ export function App() {
 
   const isLoggedIn = session.status === "authenticated";
   const token = session.status === "authenticated" ? session.token : "";
-  const sessionSub = session.status === "authenticated" ? session.userId : undefined;
+  const sessionSub = session.status === "authenticated" ? (session.userId ?? undefined) : undefined;
   
   const { profile } = useProfilePageData(isLoggedIn ? token : "");
   
@@ -84,11 +87,17 @@ export function App() {
 
   const onSignUp = async () => {
     await handleSignUp();
+
+    // Move to verification stage after successful signup
+    setSignupStage('verify');
   };
 
   const onConfirm = async () => {
     const success = await handleConfirm();
-    if (success) setRightPanel("login");
+    if (success) {
+      setSignupStage('form');
+      setRightPanel("login");
+    }
   };
 
   const onResend = async () => {
@@ -96,14 +105,8 @@ export function App() {
   };
   if (session.status === "bootstrapping") {
     return (
-      <main style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--page-bg)",
-      }}>
-        <p style={{ color: "var(--muted)", fontSize: "14px" }}>Loading...</p>
+      <main className="app-loading">
+        <p className="app-loading-text">Loading...</p>
       </main>
     );
   }
@@ -145,7 +148,7 @@ export function App() {
       accountId={accountId}
       displayName={displayName}
       avatarLabel={avatarLabel}
-      sub={sub}
+      sub={sub ?? undefined}
       expiringItems={expiringItems}
       preferenceProfile={preferenceProfile}
       rightPanel={rightPanel}
@@ -157,6 +160,8 @@ export function App() {
       familyName={familyName}
       code={code}
       token={token}
+      signupStage={signupStage}
+      onSetSignupStage={setSignupStage}
       onboardingCompleted={onboardingCompleted}
       onEmailChange={setEmail}
       onPasswordChange={setPassword}
@@ -165,8 +170,15 @@ export function App() {
       onCodeChange={setCode}
       onHome={() => setView("home")}
       onLogout={onLogout}
-      onLoginNavigate={() => { setAuthError(""); setRightPanel("login"); }}
-      onSignUpNavigate={() => { setAuthError(""); setRightPanel("signup"); }}
+      onLoginNavigate={() => { 
+        setAuthError(""); 
+        setSignupStage('form');
+        setRightPanel("login"); 
+      }}
+      onSignUpNavigate={() => { 
+        setAuthError(""); 
+        setSignupStage('form');
+        setRightPanel("signup"); }}
       onPantryNavigate={() => setView("pantry")}
       onLogin={onLogin}
       onSignUp={onSignUp}

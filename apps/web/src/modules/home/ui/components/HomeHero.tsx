@@ -37,6 +37,8 @@ type HomeHeroProps = {
   token: string;
   onboardingCompleted: boolean;
   sub?: string;
+  signupStage: 'form' | 'verify';
+  onSetSignupStage: (stage: 'form' | 'verify') => void;
   onEmailChange: (v: string) => void;
   onPasswordChange: (v: string) => void;
   onGivenNameChange: (v: string) => void;
@@ -113,6 +115,8 @@ export function HomeHero({
   token,
   onboardingCompleted,
   sub,
+  signupStage,
+  onSetSignupStage,
   onEmailChange,
   onPasswordChange,
   onGivenNameChange,
@@ -164,6 +168,39 @@ export function HomeHero({
   );
 
   const [showComposer, setShowComposer] = useState(false);
+  const [typedText, setTypedText] = useState("");
+  const [showSteps, setShowSteps] = useState(false);
+  const fullText = "Make every penny count. Build a smarter pantry and never waste food again.";
+
+  useEffect(() => {
+    if (rightPanel !== "guest") return;
+    
+    const runAnimation = () => {
+      let index = 0;
+      setTypedText("");
+      setShowSteps(false);
+      const timer = setInterval(() => {
+        if (index < fullText.length) {
+          setTypedText(fullText.slice(0, index + 1));
+          index++;
+        } else {
+          clearInterval(timer);
+          setTimeout(() => setShowSteps(true), 300);
+        }
+      }, 30);
+      return timer;
+    };
+
+    const typingTimer = runAnimation();
+    const repeatInterval = setInterval(() => {
+      runAnimation();
+    }, 30000);
+
+    return () => {
+      clearInterval(typingTimer);
+      clearInterval(repeatInterval);
+    };
+  }, [rightPanel]);
 
   // ─── Right panel state machine ──────────────────────────────────────────────
 
@@ -176,12 +213,27 @@ export function HomeHero({
             <section className="ig-guest-box">
               <h3>Welcome to PantryPal</h3>
               <p className="ig-guest-copy">
-                Make every penny count. Build a smarter pantry and never waste food again.
+                {typedText}<span className="typing-cursor">|</span>
               </p>
-              <p className="ig-steps">
-                Three steps: create account → scan receipt → get recipe
-              </p>
-              <div style={{ display: "flex", gap: "10px", marginTop: "16px", flexWrap: "wrap" }}>
+              {showSteps && (
+                <div className="ig-steps-container">
+                  <div className="ig-step-item">
+                    <div className="ig-step-icon">👤</div>
+                    <span className="ig-step-text">Create account</span>
+                  </div>
+                  <div className="ig-step-arrow">→</div>
+                  <div className="ig-step-item">
+                    <div className="ig-step-icon">📸</div>
+                    <span className="ig-step-text">Scan receipt</span>
+                  </div>
+                  <div className="ig-step-arrow">→</div>
+                  <div className="ig-step-item">
+                    <div className="ig-step-icon">🍳</div>
+                    <span className="ig-step-text">Get recipe</span>
+                  </div>
+                </div>
+              )}
+              <div className="auth-panel-actions">
                 <button className="btn-primary" onClick={onLoginNavigate}>Log in</button>
               </div>
             </section>
@@ -192,13 +244,9 @@ export function HomeHero({
         return (
           <AnimatedPanel panelKey="login">
             <section>
-              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--muted)", marginBottom: "8px" }}>
-                Welcome back
-              </p>
-              <h3 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "20px", letterSpacing: "-0.3px" }}>
-                Log in
-              </h3>
-              <div style={{ display: "grid", gap: "10px", marginBottom: "14px" }}>
+              <p className="auth-panel-label">Welcome back</p>
+              <h3 className="auth-panel-title">Log in</h3>
+              <div className="auth-panel-grid">
                 <input
                   type="email"
                   placeholder="Email"
@@ -215,29 +263,15 @@ export function HomeHero({
                   onKeyDown={(e) => { if (e.key === "Enter") onLogin(); }}
                 />
               </div>
-              {authError && (
-                <p style={{ fontSize: "13px", color: "var(--error)", marginBottom: "10px" }}>
-                  {authError}
-                </p>
-              )}
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <button
-                  className="btn-primary"
-                  onClick={onLogin}
-                  disabled={authLoading}
-                  style={{ flex: 1 }}
-                >
+              {authError && <p className="auth-panel-error">{authError}</p>}
+              <div className="auth-panel-actions-row">
+                <button className="btn-primary" onClick={onLogin} disabled={authLoading}>
                   {authLoading ? "Logging in…" : "Log in"}
                 </button>
               </div>
-              <p style={{ marginTop: "14px", fontSize: "13px", color: "var(--muted)" }}>
+              <p className="auth-panel-footer">
                 Don't have an account?{" "}
-                <button
-                  onClick={onSignUpNavigate}
-                  style={{ color: "var(--accent)", fontWeight: 600, background: "none", border: "none", cursor: "pointer", padding: 0, fontSize: "13px" }}
-                >
-                  Sign up
-                </button>
+                <button onClick={onSignUpNavigate} className="auth-panel-link">Sign up</button>
               </p>
             </section>
           </AnimatedPanel>
@@ -245,99 +279,96 @@ export function HomeHero({
 
       case "signup":
         return (
-          <AnimatedPanel panelKey="signup">
+          <AnimatedPanel panelKey={`signup-${signupStage}`}>
             <section>
-              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--muted)", marginBottom: "8px" }}>
-                Create account
-              </p>
-              <h3 style={{ fontSize: "22px", fontWeight: 700, marginBottom: "20px", letterSpacing: "-0.3px" }}>
-                Sign up
-              </h3>
-              <div style={{ display: "grid", gap: "10px", marginBottom: "14px" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  <input
-                    type="text"
-                    placeholder="First name"
-                    value={givenName}
-                    onChange={(e) => onGivenNameChange(e.target.value)}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Last name"
-                    value={familyName}
-                    onChange={(e) => onFamilyNameChange(e.target.value)}
-                  />
-                </div>
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => onEmailChange(e.target.value)}
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => onPasswordChange(e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="Verification code (after signup)"
-                  value={code}
-                  onChange={(e) => onCodeChange(e.target.value)}
-                />
-              </div>
-              {authError && (
-                <p style={{ fontSize: "13px", color: "var(--error)", marginBottom: "10px" }}>
-                  {authError}
-                </p>
+              {signupStage === 'form' ? (
+                <>
+                  <p className="auth-panel-label">Create account</p>
+                  <h3 className="auth-panel-title">Sign up</h3>
+                  <div className="auth-panel-grid">
+                    <div className="auth-panel-grid-2col">
+                      <input
+                        type="text"
+                        placeholder="First name"
+                        value={givenName}
+                        onChange={(e) => onGivenNameChange(e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Last name"
+                        value={familyName}
+                        onChange={(e) => onFamilyNameChange(e.target.value)}
+                      />
+                    </div>
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => onEmailChange(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => onPasswordChange(e.target.value)}
+                    />
+                  </div>
+                  {authError && <p className="auth-panel-error">{authError}</p>}
+                  <div className="auth-panel-actions-row">
+                    <button className="btn-primary" onClick={onSignUp} disabled={authLoading}>
+                      {authLoading ? "Creating…" : "Create account"}
+                    </button>
+                  </div>
+                  <p className="auth-panel-footer">
+                    Already have an account?{" "}
+                    <button onClick={onLoginNavigate} className="auth-panel-link">Log in</button>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="auth-panel-label">Verify email</p>
+                  <h3 className="auth-panel-title">Enter code</h3>
+                  <p className="auth-panel-footer" style={{ marginBottom: '14px' }}>
+                    We sent a verification code to {email}
+                  </p>
+                  <div className="auth-panel-grid">
+                    <input
+                      type="text"
+                      placeholder="Verification code"
+                      value={code}
+                      onChange={(e) => onCodeChange(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
+                  {authError && <p className="auth-panel-error">{authError}</p>}
+                  <div className="auth-panel-actions-row">
+                    <button className="btn-primary" onClick={onConfirm} disabled={authLoading}>
+                      {authLoading ? "Verifying…" : "Confirm code"}
+                    </button>
+                  </div>
+                  <div className="auth-panel-secondary-actions">
+                    <button onClick={onResend} className="auth-panel-secondary-link">
+                      Resend code
+                    </button>
+                    <span className="auth-panel-divider">·</span>
+                    <button onClick={() => onSetSignupStage('form')} className="auth-panel-secondary-link">
+                      Back to signup
+                    </button>
+                  </div>
+                </>
               )}
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <button
-                  className="btn-primary"
-                  onClick={onSignUp}
-                  disabled={authLoading}
-                  style={{ flex: 1 }}
-                >
-                  {authLoading ? "Creating…" : "Create account"}
-                </button>
-                <button className="btn-secondary" onClick={onConfirm} disabled={authLoading}>
-                  Confirm code
-                </button>
-              </div>
-              <div style={{ marginTop: "10px", display: "flex", gap: "12px", alignItems: "center" }}>
-                <button
-                  onClick={onResend}
-                  style={{ color: "var(--muted)", fontSize: "12px", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  Resend code
-                </button>
-                <span style={{ color: "var(--line)" }}>·</span>
-                <button
-                  onClick={onLoginNavigate}
-                  style={{ color: "var(--accent)", fontWeight: 600, fontSize: "13px", background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                >
-                  Already have an account?
-                </button>
-              </div>
             </section>
           </AnimatedPanel>
         );
 
+
       case "success":
         return (
           <AnimatedPanel panelKey="success">
-            <section style={{ textAlign: "center", padding: "24px 0" }}>
-              <div style={{
-                width: "56px", height: "56px", borderRadius: "50%",
-                background: "linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 16px", fontSize: "24px",
-              }}>
-                ✓
-              </div>
-              <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px" }}>Welcome back!</h3>
-              <p style={{ fontSize: "13px", color: "var(--muted)" }}>Loading your pantry…</p>
+            <section className="success-panel">
+              <div className="success-icon">✓</div>
+              <h3 className="success-title">Welcome back!</h3>
+              <p className="success-text">Loading your pantry…</p>
             </section>
           </AnimatedPanel>
         );
@@ -346,44 +377,19 @@ export function HomeHero({
         return (
           <AnimatedPanel panelKey="user">
             <>
-              <section className="ig-user-box" style={{ marginBottom: "20px" }}>
+              <section className="ig-user-box">
                 <div className="ig-avatar">{avatarLabel}</div>
                 <div>
                   <p className="ig-account-id">{accountId}</p>
                   <p className="ig-display-name">{displayName}</p>
                 </div>
-                <button
-                  onClick={onLogout}
-                  style={{ marginLeft: "auto", fontSize: "12px", color: "var(--muted)", background: "none", border: "none", cursor: "pointer" }}
-                >
-                  Log out
-                </button>
+                <button onClick={onLogout} className="user-panel-logout">Log out</button>
               </section>
 
               {/* Complete Profile CTA — only shown if onboarding not done */}
               {!onboardingCompleted && (
-                <button
-                  onClick={() => onRightPanelChange("onboarding-q")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    width: "100%",
-                    padding: "10px 12px",
-                    marginBottom: "16px",
-                    borderRadius: "10px",
-                    border: "1px dashed #dc2743",
-                    background: "#fff5f7",
-                    color: "#dc2743",
-                    fontWeight: 600,
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    transition: "background 0.15s",
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#ffe0e8")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#fff5f7")}
-                >
-                  <span style={{ fontSize: "16px" }}>✦</span>
+                <button onClick={() => onRightPanelChange("onboarding-q")} className="onboarding-cta">
+                  <span className="onboarding-cta-icon">✦</span>
                   Complete your profile
                 </button>
               )}
@@ -446,7 +452,7 @@ export function HomeHero({
       {/* Left sidebar */}
       <aside className="ig-left-rail">
         <div className="ig-left-logo">PantryPal</div>
-        <nav className="ig-left-nav" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <nav className="ig-left-nav">
           {/* Home — always visible */}
           <button className={`ig-left-link${centerView === "home" ? " is-active" : ""}`} onClick={onHome}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -490,7 +496,7 @@ export function HomeHero({
               </button>
 
               {/* Logout — pushed to bottom */}
-              <button className="ig-left-link" onClick={onLogout} style={{ marginTop: "auto" }}>
+              <button className="ig-left-link left-nav-logout" onClick={onLogout}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                   <path fillRule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/>
                   <path fillRule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/>
@@ -606,17 +612,7 @@ export function HomeHero({
                         </li>
                       ))}
                     </ul>
-                    <div className="panel-cta-row">
-                      <button className="btn-primary" onClick={onPantryNavigate}>Manage your Pantry</button>
-                      {!isLoggedIn && (
-                        <button className="btn-primary" onClick={onLoginNavigate}>Log in</button>
-                      )}
-                    </div>
-                    {homeLoading && (
-                      <p style={{ fontSize: "12px", color: "var(--muted)", marginTop: "10px" }}>
-                        Loading today's recipe...
-                      </p>
-                    )}
+                    {homeLoading && <p className="post-loading-text">Loading today's recipe...</p>}
                     {homeError && <p className="error">{homeError}</p>}
                   </div>
                 </article>
@@ -635,57 +631,14 @@ export function HomeHero({
       {showComposer && (
         <>
           {/* Backdrop */}
-          <div
-            onClick={() => setShowComposer(false)}
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.5)",
-              zIndex: 100,
-            }}
-          />
+          <div onClick={() => setShowComposer(false)} className="modal-backdrop" />
 
           {/* Modal */}
-          <div style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "min(540px, 95vw)",
-            maxHeight: "90vh",
-            overflowY: "auto",
-            background: "#fff",
-            borderRadius: "16px",
-            zIndex: 101,
-            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-          }}>
+          <div className="modal-container">
             {/* Modal header */}
-            <div style={{
-              padding: "16px",
-              borderBottom: "1px solid #f0f0f0",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              position: "sticky",
-              top: 0,
-              background: "#fff",
-              borderRadius: "16px 16px 0 0",
-              zIndex: 1,
-            }}>
-              <span style={{ fontWeight: 700, fontSize: "15px" }}>New Post</span>
-              <button
-                onClick={() => setShowComposer(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                  color: "#999",
-                  lineHeight: 1,
-                }}
-              >
-                ✕
-              </button>
+            <div className="modal-header">
+              <span className="modal-title">New Post</span>
+              <button onClick={() => setShowComposer(false)} className="modal-close">✕</button>
             </div>
 
             <PostComposer

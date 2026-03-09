@@ -7,7 +7,7 @@
 
 :root {
   color-scheme: light;
-  --ig-brand-gradient: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  --ig-brand-gradient: linear-gradient(135deg, #701d75, #cc0325);
 
   /* Core palette — Instagram light */
   /* --page-bg: #fafafa; */
@@ -462,6 +462,10 @@ input::placeholder {
   background: var(--page-bg);
 }
 
+.auth-page h1 {
+  font-weight: lighter;
+}
+
 .auth-overlay {
   min-height: 100vh;
   padding: 24px 16px;
@@ -743,7 +747,7 @@ input::placeholder {
 .ig-left-logo {
   font-family: 'Lobster', 'Billabong', cursive;
   font-size: 22px;
-  background: var(--ig-brand-gradient);
+  background: linear-gradient(135deg, #701d75, #cc0325);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: 1px;

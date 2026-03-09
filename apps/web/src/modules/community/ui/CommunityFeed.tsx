@@ -286,7 +286,7 @@ export function CommunityFeed({
       {/* Create post trigger — authenticated only */}
       {isLoggedIn && onCreatePost && (
         <button onClick={onCreatePost} className="community-feed-create-post">
-          <div className="community-feed-create-avatar" />
+          {/* <div className="community-feed-create-avatar" /> */}
           <span className="community-feed-create-placeholder">
             Share something from your kitchen...
           </span>
@@ -299,9 +299,6 @@ export function CommunityFeed({
           <p className="community-feed-guest-text">
             Log in to get a personalized feed based on your taste profile.
           </p>
-          <button className="btn-primary" onClick={onLoginNavigate}>
-            Log in
-          </button>
         </div>
       )}
 
