@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { dispatchApiRoute } from "./modules/api/index.js";
 
 type ApiGatewayEvent = {
@@ -6,7 +5,7 @@ type ApiGatewayEvent = {
   rawQueryString?: string;
   body?: string | null;
   isBase64Encoded?: boolean;
-  requestContext?: { http?: { method?: string } };
+  requestContext?: { http?: { method?: string }; stage?: string  };
   headers?: Record<string, string | undefined>;
 };
 
@@ -19,7 +18,10 @@ const corsHeaders = {
 
 export async function handler(event: ApiGatewayEvent) {
   const method = event.requestContext?.http?.method ?? "GET";
-  const rawPath = event.rawPath || "/";
+  const stage = event.requestContext?.stage ?? "";
+  const rawPath = stage && event.rawPath?.startsWith(`/${stage}`)
+  ? event.rawPath.slice(stage.length + 1) || "/"
+  : event.rawPath || "/";
   const rawQuery = event.rawQueryString ? `?${event.rawQueryString}` : "";
   const path = `${rawPath}${rawQuery}`;
 

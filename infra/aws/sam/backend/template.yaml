@@ -1,0 +1,222 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  PantryPal API - Main backend Lambda + API Gateway
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+
+  FrontendOrigin:
+    Type: String
+    Default: "http://localhost:5173"
+
+  CognitoUserPoolId:
+    Type: String
+
+  CognitoClientId:
+    Type: String
+
+  UnsplashAccessKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  SpoonacularApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  S3BucketDailySpecials:
+    Type: String
+    Default: pantrypal-daily-specials
+
+  S3BucketCommunityPosts:
+    Type: String
+    Default: pantrypal-community-posts
+
+  CommunityPostsTable:
+    Type: String
+    Default: pantrypal-community-posts
+
+  CommunityLikesTable:
+    Type: String
+    Default: pantrypal-community-likes
+
+  CommunityCommentsTable:
+    Type: String
+    Default: pantrypal-community-comments
+
+  CommunityTopicsTable:
+    Type: String
+    Default: pantrypal-community-topics
+
+  BedrockModelId:
+    Type: String
+    Default: arn:aws:bedrock:us-east-2:175948132683:inference-profile/us.amazon.nova-2-lite-v1:0
+
+  CuratedRecipesBucket:
+    Type: String
+    Default: pantrypal-recipe-images
+  
+  CuratedRecipesPrefix:
+    Type: String
+    Default: images
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "pantrypal-api-${Stage}"
+      CodeUri: ../../../../.aws-sam/build-api/ApiFunction
+      Handler: index.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Timeout: 30
+      MemorySize: 512
+      Role: !GetAtt ApiExecutionRole.Arn
+      Environment:
+        Variables:
+          NODE_ENV: production
+          DATABASE_URL: !Ref DatabaseUrl
+          FRONTEND_ORIGIN: !Ref FrontendOrigin
+          COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
+          COGNITO_CLIENT_ID: !Ref CognitoClientId
+          UNSPLASH_ACCESS_KEY: !Ref UnsplashAccessKey
+          SPOONACULAR_API_KEY: !Ref SpoonacularApiKey
+          S3_BUCKET_DAILY_SPECIALS: !Ref S3BucketDailySpecials
+          S3_BUCKET_COMMUNITY_POSTS: !Ref S3BucketCommunityPosts
+          COMMUNITY_POSTS_TABLE: !Ref CommunityPostsTable
+          COMMUNITY_LIKES_TABLE: !Ref CommunityLikesTable
+          COMMUNITY_COMMENTS_TABLE: !Ref CommunityCommentsTable
+          COMMUNITY_TOPICS_TABLE: !Ref CommunityTopicsTable
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+          CURATED_RECIPES_BUCKET: !Ref CuratedRecipesBucket
+          CURATED_RECIPES_PREFIX: !Ref CuratedRecipesPrefix
+      Events:
+        ApiGatewayProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PantryPalHttpApi
+            Path: /{proxy+}
+            Method: ANY
+        ApiGatewayRoot:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref PantryPalHttpApi
+            Path: /
+            Method: ANY
+
+  PantryPalHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref FrontendOrigin
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        MaxAge: 300
+
+  ApiExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "pantrypal-api-role-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ApiPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: S3DailySpecials
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${S3BucketDailySpecials}/*"
+              - Sid: S3CuratedRecipes
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: arn:aws:s3:::pantrypal-recipe-images/*
+              - Sid: S3CommunityPosts
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource: !Sub "arn:aws:s3:::${S3BucketCommunityPosts}/*"
+              - Sid: BedrockInvoke
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: "*"
+              - Sid: DynamoDBCommunityTables
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityPostsTable}"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityPostsTable}/index/*"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityLikesTable}"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityLikesTable}/index/*"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityCommentsTable}"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityCommentsTable}/index/*"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityTopicsTable}"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityTopicsTable}/index/*"
+
+  ApiErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "pantrypal-api-errors-${Stage}"
+      AlarmDescription: API Lambda error rate high
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ApiFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${PantryPalHttpApi}.execute-api.us-east-2.amazonaws.com/${Stage}"
+  ApiFunctionArn:
+    Value: !GetAtt ApiFunction.Arn
+  ApiRoleArn:
+    Value: !GetAtt ApiExecutionRole.Arn
