@@ -2,6 +2,7 @@ import type { CommunityPostView, CommunityTopic } from "../model/community.types
 import { useState } from "react";
 import { CommentSection } from "./CommentSection";
 import { usePostInteractions } from "../application/usePostInteractions";
+import "../styles/community.css";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

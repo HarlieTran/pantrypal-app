@@ -11,7 +11,14 @@ export function useWeeklyTopics() {
       setLoading(true);
       try {
         const data = await fetchWeeklyTopics();
-        setTopics(data);
+        // Deduplicate by date, keep first occurrence
+        const seen = new Set<string>();
+        const unique = data.filter(topic => {
+          if (seen.has(topic.date)) return false;
+          seen.add(topic.date);
+          return true;
+        });
+        setTopics(unique);
       } catch {
         // Non-fatal — circles just show empty placeholders
       } finally {

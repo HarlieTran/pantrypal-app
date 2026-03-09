@@ -1,0 +1,228 @@
+/* ─── Pantry Module Styles ───────────────────────────────────────────────── */
+
+/* Modal system */
+.ig-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 20px;
+}
+
+.ig-modal-card {
+  position: relative;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  padding: 18px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.ig-add-modal {
+  max-width: 440px;
+}
+
+.ig-upload-modal {
+  max-width: 560px;
+}
+
+.ig-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.ig-modal-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.ig-modal-subtitle {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ig-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.ig-modal-error-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.ig-form-label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+
+.ig-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ig-hidden-input {
+  display: none;
+}
+
+.ig-upload-drop {
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.ig-upload-drop:hover {
+  border-color: #dc2743;
+  background: #fff5f7;
+}
+
+.ig-upload-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 10px;
+  border: 1px solid var(--line);
+  font-size: 24px;
+  color: var(--muted);
+}
+
+.ig-upload-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ig-upload-help {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.ig-upload-preview-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.ig-upload-preview {
+  width: 100%;
+  display: block;
+}
+
+.ig-upload-preview.is-processing {
+  opacity: 0.7;
+}
+
+.ig-upload-filename {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ig-upload-processing {
+  padding: 4px 0;
+}
+
+.ig-upload-progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+
+.ig-upload-progress-track {
+  height: 6px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.ig-upload-progress-fill {
+  height: 100%;
+  background: #dc2743;
+  transition: width 0.35s ease;
+}
+
+.ig-upload-review-note {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ig-upload-review-head,
+.ig-upload-review-row {
+  display: grid;
+  grid-template-columns: 20px 1fr 64px 72px 108px 28px;
+  gap: 6px;
+  align-items: center;
+}
+
+.ig-upload-review-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0 4px 6px;
+}
+
+.ig-upload-review-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.ig-upload-review-row {
+  border-bottom: 1px solid var(--line);
+  padding: 7px 4px;
+}
+
+.ig-upload-review-row.is-muted {
+  opacity: 0.4;
+}
+
+.ig-upload-review-row input,
+.ig-upload-review-row select {
+  font-size: 12px;
+  padding: 5px 8px;
+}
+
+.ig-row-remove {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 2px;
+  font-size: 14px;
+}

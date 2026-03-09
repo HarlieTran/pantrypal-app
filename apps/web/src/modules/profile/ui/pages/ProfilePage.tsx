@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { buildProfileViewModel } from "../../application/profileViewModel";
 import { useProfilePageData } from "../../application/useProfilePageData";
+import "../../styles/profile.css";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 

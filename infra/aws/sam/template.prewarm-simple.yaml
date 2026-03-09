@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  PantryPal Prewarm - Daily special generation Lambda
+
+Parameters:
+  Stage:
+    Type: String
+    Default: prod
+    AllowedValues: [dev, prod]
+
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+
+  UnsplashAccessKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  S3BucketDailySpecials:
+    Type: String
+
+  CommunityPostsTable:
+    Type: String
+    Default: pantrypal-community-posts
+
+  CommunityTopicsTable:
+    Type: String
+    Default: pantrypal-community-topics
+
+  BedrockModelId:
+    Type: String
+    Default: arn:aws:bedrock:us-east-2:175948132683:inference-profile/us.amazon.nova-2-lite-v1:0
+
+  PrewarmSchedule:
+    Type: String
+    Default: "cron(0 6 * * ? *)"
+
+Resources:
+  PrewarmFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "pantrypal-prewarm-${Stage}"
+      CodeUri: ../../../.aws-sam/build-prewarm/PrewarmFunction
+      Handler: index.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Timeout: 60
+      MemorySize: 512
+      Role: !GetAtt PrewarmExecutionRole.Arn
+      Environment:
+        Variables:
+          NODE_ENV: production
+          DATABASE_URL: !Ref DatabaseUrl
+          UNSPLASH_ACCESS_KEY: !Ref UnsplashAccessKey
+          S3_BUCKET_DAILY_SPECIALS: !Ref S3BucketDailySpecials
+          COMMUNITY_POSTS_TABLE: !Ref CommunityPostsTable
+          COMMUNITY_TOPICS_TABLE: !Ref CommunityTopicsTable
+          BEDROCK_MODEL_ID: !Ref BedrockModelId
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Name: !Sub "pantrypal-prewarm-schedule-${Stage}"
+            Schedule: !Ref PrewarmSchedule
+            Enabled: true
+
+  PrewarmExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "pantrypal-prewarm-role-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: PrewarmPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: S3DailySpecials
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${S3BucketDailySpecials}/*"
+              - Sid: BedrockInvoke
+                Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource: "*"
+              - Sid: DynamoDBCommunityTables
+                Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                Resource:
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityPostsTable}"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityPostsTable}/index/*"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityTopicsTable}"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityTopicsTable}/index/*"
+
+  PrewarmErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "pantrypal-prewarm-errors-${Stage}"
+      AlarmDescription: Prewarm Lambda failed
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref PrewarmFunction
+      Statistic: Sum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  PrewarmFunctionArn:
+    Value: !GetAtt PrewarmFunction.Arn
+  PrewarmRoleArn:
+    Value: !GetAtt PrewarmExecutionRole.Arn

@@ -15,6 +15,14 @@ const bedrock = new BedrockRuntimeClient({ region: BEDROCK_REGION });
 
 const bucket = process.env.S3_BUCKET_DAILY_SPECIALS || "";
 
+// Rotates through world regions by day-of-year so each day has a different emphasis
+const REGIONS = [
+  "West Africa", "East Africa", "North Africa",
+  "Middle East", "South Asia", "Southeast Asia", "East Asia", "Central Asia",
+  "Eastern Europe", "Western Europe", "Scandinavia", "Mediterranean",
+  "Latin America", "Caribbean", "North America", "Oceania",
+];
+
 type GeneratedSpecial = {
   dishName: string;
   cuisine?: string;
@@ -59,26 +67,62 @@ function isHttpUrl(value: string | null | undefined): value is string {
   }
 }
 
-async function callBedrock(dateIso: string, locale: string): Promise<GeneratedSpecial> {
-  const prompt = `
-Return ONLY valid JSON with keys:
-dishName, cuisine, origin, description, history, culturalMeaning, inspiredBy, funFact, ingredients, instructions, imageUrl.
+// Returns the day-of-year (1-366) for a given ISO date string
+function getDayOfYear(dateIso: string): number {
+  const date = new Date(dateIso);
+  const start = new Date(Date.UTC(date.getUTCFullYear(), 0, 0));
+  return Math.floor((date.getTime() - start.getTime()) / 86400000);
+}
 
-Context:
+// Fetches the last N dish names from DB so we can tell Bedrock to avoid them
+async function getRecentDishNames(locale: string, days = 14): Promise<string[]> {
+  const since = new Date();
+  since.setUTCDate(since.getUTCDate() - days);
+
+  const rows = await prisma.dailySpecial.findMany({
+    where: { locale, specialDate: { gte: since } },
+    select: { dishName: true },
+    orderBy: { specialDate: "desc" },
+  });
+
+  return rows.map((r) => r.dishName);
+}
+
+async function callBedrock(
+  dateIso: string,
+  locale: string,
+  recentDishes: string[]
+): Promise<GeneratedSpecial> {
+  const dayOfYear = getDayOfYear(dateIso);
+  const todayRegion = REGIONS[dayOfYear % REGIONS.length];
+
+  const excludeClause =
+    recentDishes.length > 0
+      ? `- Do NOT pick any of these recently featured dishes: ${recentDishes.join(", ")}.`
+      : "";
+
+  const prompt = `
+Return ONLY valid JSON. No markdown, no code fences, no explanation — just the raw JSON object.
+Required keys: dishName, cuisine, origin, description, history, culturalMeaning, inspiredBy, funFact, ingredients, instructions, imageUrl.
+
+Rules:
 - Date: ${dateIso}
-- Locale: ${locale}
-- Pick one culturally significant dish from anywhere in the world.
-- Keep text concise.
+- Today's featured region: ${todayRegion} — pick a dish from this region.
+- Pick a specific traditional or lesser-known dish. Avoid globally dominant dishes like sushi, pizza, pasta, burger, or fried chicken.
+- The dish must be genuinely from the region's culinary heritage.
+${excludeClause}
+- Keep all text concise (1-2 sentences per field).
 - ingredients: array of {name, qty}
-- instructions: array of {step, text}
-- imageUrl: null if unavailable.
+- instructions: array of {step, text} with 4-6 steps
+- imageUrl: null
 `.trim();
 
   const res = await bedrock.send(
     new ConverseCommand({
       modelId: BEDROCK_MODEL_ID,
       messages: [{ role: "user", content: [{ text: prompt }] }],
-      inferenceConfig: { temperature: 0.7, maxTokens: 900 },
+      // Higher temperature = more creative variety. 1.0 is the max for Nova models.
+      inferenceConfig: { temperature: 1.0, maxTokens: 1000 },
     })
   );
 
@@ -99,20 +143,32 @@ async function fetchDishImageUrl(dishName: string, cuisine?: string): Promise<st
   const key = process.env.UNSPLASH_ACCESS_KEY;
   if (!key) return null;
 
-  const query = encodeURIComponent(`${dishName} ${cuisine ?? ""} food`.trim());
-  const url = `https://api.unsplash.com/photos/random?query=${query}&orientation=landscape&content_filter=high`;
+  const queries = [
+    `${dishName} food`,                          // specific: "Knafeh food"
+    cuisine ? `${cuisine} food` : null,          // cuisine: "Middle Eastern food"
+    "world cuisine traditional dish",            // generic fallback
+  ].filter(Boolean) as string[];
 
-  const res = await fetch(url, {
-    headers: { Authorization: `Client-ID ${key}` },
-  });
+  for (const q of queries) {
+    const url = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(q)}&orientation=landscape&content_filter=high`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Client-ID ${key}` },
+    });
 
-  if (!res.ok) {
-    console.warn("Unsplash fetch failed:", res.status, res.statusText);
-    return null;
+    if (!res.ok) {
+      console.warn(`Unsplash fetch failed for "${q}": ${res.status}`);
+      continue;
+    }
+
+    const data = (await res.json()) as { urls?: { regular?: string } };
+    if (data.urls?.regular) {
+      console.log(`[home] Unsplash image found for query: "${q}"`);
+      return data.urls.regular;
+    }
   }
 
-  const data = (await res.json()) as { urls?: { regular?: string } };
-  return data.urls?.regular ?? null;
+  console.warn("[home] Unsplash returned no images for any query");
+  return null;
 }
 
 async function getFromDB(specialDate: Date, locale: string) {
@@ -207,7 +263,7 @@ export async function getOrCreateDailySpecial(locale = "global") {
   const cached = await getFromDB(specialDate, locale);
   if (cached) {
     if (!cached.imageS3Key) {
-      // Repair old/incomplete rows so later requests always get an image.
+      // Repair old/incomplete rows so later requests always get an image
       const unsplashImage = await fetchDishImageUrl(cached.dishName, cached.cuisine ?? undefined);
       const defaultImage = process.env.DEFAULT_DISH_IMAGE_URL ?? null;
       const sourceImageUrl = unsplashImage ?? (isHttpUrl(defaultImage) ? defaultImage : null);
@@ -227,7 +283,12 @@ export async function getOrCreateDailySpecial(locale = "global") {
     return hydrateSignedImage(cached);
   }
 
-  const generated = await callBedrock(dateIso, locale);
+  // Fetch last 14 days of dishes so Bedrock knows what to avoid
+  const recentDishes = await getRecentDishNames(locale, 14);
+  console.log(`[home] Generating dish for ${dateIso}, avoiding: ${recentDishes.join(", ") || "none"}`);
+
+  const generated = await callBedrock(dateIso, locale, recentDishes);
+  console.log(`[home] Bedrock selected: ${generated.dishName}`);
 
   const bedrockImage = isHttpUrl(generated.imageUrl) ? generated.imageUrl : null;
   const unsplashImage = await fetchDishImageUrl(generated.dishName, generated.cuisine);
@@ -254,7 +315,7 @@ export async function getOrCreateDailySpecial(locale = "global") {
       imageUrl: hydrated?.imageUrl ?? null,
       description: saved.description ?? null,
     });
-  
+
     await createPantryPalSystemPost({
       topicId: topic.topicId,
       dishName: saved.dishName,
@@ -268,4 +329,3 @@ export async function getOrCreateDailySpecial(locale = "global") {
 
   return hydrated;
 }
-

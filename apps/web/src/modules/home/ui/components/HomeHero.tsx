@@ -559,8 +559,8 @@ export function HomeHero({
             ) : (
               <>
                 <div className="ig-stories" aria-label="Weekly special recipes">
-                  {stories.map((story) => (
-                    <article key={story.day} className="ig-story-item">
+                  {stories.map((story, idx) => (
+                    <article key={`${story.day}-${idx}`} className="ig-story-item">
                       <button className={`ig-story-ring${story.isToday ? " is-today" : ""}`}>
                         <img src={heroImageSrc} alt={`${story.day} special`} />
                       </button>

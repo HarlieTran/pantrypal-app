@@ -25,6 +25,7 @@ export type CommunityPost = {
   topicId?: string;
   postType: PostType;
   imageS3Key?: string;
+  imageBucket?: string;
   imageUrl?: string;
   caption?: string;
   dishName?: string;

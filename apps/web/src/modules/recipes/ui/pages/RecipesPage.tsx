@@ -1,6 +1,7 @@
 import { useRecipeSuggestions } from "../../application/useRecipeSuggestions";
 import { useRecipeDetails } from "../../application/useRecipeDetails";
 import { RecipeDetailsModal } from "../components/RecipeDetailsModal";
+import "../../styles/recipes.css";
 
 interface Props {
   token: string;

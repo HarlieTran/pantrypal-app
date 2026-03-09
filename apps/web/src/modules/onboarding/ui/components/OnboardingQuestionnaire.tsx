@@ -1,5 +1,6 @@
 import { QUESTION_TYPES } from "@pantrypal/shared-types";
 import { useOnboardingQuestionnaire } from "../../application/useOnboardingQuestionnaire";
+import "../../styles/onboarding.css";
 
 type Props = {
   token: string;

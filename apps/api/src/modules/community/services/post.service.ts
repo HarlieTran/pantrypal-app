@@ -37,8 +37,9 @@ const COMMUNITY_IMAGES_BUCKET =
 async function resolveImageUrl(post: CommunityPost): Promise<string | undefined> {
   if (!post.imageS3Key) return undefined;
   try {
+    const bucket = post.imageBucket || COMMUNITY_IMAGES_BUCKET;  // ← use post's bucket
     const command = new GetObjectCommand({
-      Bucket: COMMUNITY_IMAGES_BUCKET,
+      Bucket: bucket,
       Key: post.imageS3Key,
     });
     return await getSignedUrl(s3, command, { expiresIn: 3600 });

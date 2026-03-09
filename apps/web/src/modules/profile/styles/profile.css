@@ -1,0 +1,245 @@
+/* ─── Profile Page Styles ────────────────────────────────────────────────── */
+
+.profile-header {
+  background: #fff;
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.profile-avatar-large {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(45deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5);
+  color: #fff;
+  font-size: 26px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  margin: 0 0 2px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+
+.profile-username {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.profile-member-since {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted-light);
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.profile-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-status-badge.is-complete {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.profile-status-badge.is-incomplete {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.profile-section-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.profile-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line-light);
+  background: #fafafa;
+}
+
+.profile-section-icon {
+  font-size: 18px;
+}
+
+.profile-section-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--ink-secondary);
+}
+
+.profile-section-body {
+  padding: 18px;
+}
+
+.profile-empty-state {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.profile-empty-text {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.profile-confidence-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.profile-confidence-bar {
+  margin-bottom: 10px;
+}
+
+.profile-confidence-bar-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.profile-confidence-bar-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.profile-confidence-bar-value {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-confidence-bar-track {
+  height: 5px;
+  background: var(--line);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.profile-confidence-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.8s cubic-bezier(0.22,1,0.36,1);
+}
+
+.profile-tags-section {
+  margin-bottom: 20px;
+}
+
+.profile-tags-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.profile-tags-label.is-like {
+  color: #2e7d32;
+}
+
+.profile-tags-label.is-dislike {
+  color: #b71c1c;
+}
+
+.profile-tags-label.is-diet {
+  color: #1565c0;
+}
+
+.profile-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.profile-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.profile-tag.is-like {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.profile-tag.is-dislike {
+  background: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ffcdd2;
+}
+
+.profile-tag.is-diet {
+  background: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #bbdefb;
+}
+
+.profile-cta-banner {
+  padding: 16px 18px;
+  background: #fff5f7;
+  border: 1px dashed #dc2743;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.profile-cta-text-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #dc2743;
+  margin: 0 0 2px;
+}
+
+.profile-cta-text-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}

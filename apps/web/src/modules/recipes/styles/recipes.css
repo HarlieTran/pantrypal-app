@@ -1,0 +1,125 @@
+/* ─── Recipes Module Styles ──────────────────────────────────────────────── */
+
+.ig-recipes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.ig-recipe-card {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.ig-recipe-card-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+.ig-recipe-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ig-recipe-card-body-content {
+  flex: 1;
+}
+
+.ig-recipe-card-body-footer {
+  margin-top: auto;
+}
+
+.ig-recipe-card-body h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.ig-recipe-card-body p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ig-recipe-expire {
+  color: #e65100 !important;
+}
+
+.ig-chip-group-wrap {
+  margin-bottom: 8px;
+}
+
+.ig-chip-title {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ig-chip-title.matched {
+  color: #2e7d32;
+}
+
+.ig-chip-title.missing {
+  color: #b71c1c;
+}
+
+.ig-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ig-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.ig-chip.matched {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.ig-chip.missing {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+/* Recipe modal */
+.ig-recipe-modal {
+  max-width: 760px;
+}
+
+.ig-recipe-modal-image {
+  width: 100%;
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+.ig-modal-body-text {
+  color: var(--ink-secondary);
+  margin-bottom: 12px;
+}
+
+.ig-modal-section-title {
+  margin: 12px 0 8px;
+  font-size: 16px;
+}
+
+.ig-modal-list {
+  margin: 0 0 8px 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.ig-modal-summary {
+  margin: 10px 0;
+  color: var(--muted);
+  font-size: 13px;
+  display: grid;
+  gap: 4px;
+}

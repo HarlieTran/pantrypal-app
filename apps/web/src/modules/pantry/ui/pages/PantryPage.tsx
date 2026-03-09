@@ -3,6 +3,7 @@ import { PantryItemList } from "../components/PantryItemList";
 import { AddItemModal } from "../components/AddItemModal";
 import { ImageUploadParser } from "../components/ImageUploadParser";
 import { usePantry } from "../../application/usePantry";
+import "../../styles/pantry.css";
 
 interface Props {
   token: string;

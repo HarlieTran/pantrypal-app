@@ -139,6 +139,31 @@ Resources:
           - src/jobs/daily-special-prewarm.lambda.ts
         Sourcemap: false
 
+  PrewarmJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../../../apps/api
+      Handler: src/jobs/prewarm.lambda.handler
+      Timeout: 30
+      Events:
+        DailyAt0005Utc:
+          Type: Schedule
+          Properties:
+            Schedule: cron(5 0 * * ? *)
+            Description: Prewarm job at 00:05 UTC
+            Enabled: true
+      Policies:
+        - AWSLambdaBasicExecutionRole
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Format: esm
+        EntryPoints:
+          - src/jobs/prewarm.lambda.ts
+        Sourcemap: false
+
 Outputs:
   ApiBaseUrl:
     Description: Base URL for Amplify frontend (set as VITE_API_BASE_URL)

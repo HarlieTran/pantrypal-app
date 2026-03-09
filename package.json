@@ -11,5 +11,8 @@
     "dev:api": "npm run dev -w @pantrypal/api",
     "dev:workers": "npm run dev -w @pantrypal/workers",
     "build": "npm run build --workspaces"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.161"
   }
 }

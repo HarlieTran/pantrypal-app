@@ -20,7 +20,7 @@ export async function createPantryPalSystemPost(input: CreateSystemPostInput) {
     : `Today's special: ${input.dishName}`;
 
   // Extract S3 key from URL
-  const s3Key = input.imageUrl?.match(/amazonaws\.com\/(.+?)(?:\?|$)/)?.[1];
+  const s3Key = input.imageUrl?.match(/\.s3\.[^.]+\.amazonaws\.com\/(.+?)(?:\?|$)/)?.[1];
 
   await dynamo.send(
     new PutCommand({
@@ -36,6 +36,7 @@ export async function createPantryPalSystemPost(input: CreateSystemPostInput) {
         avatarUrl: null,
         caption,
         imageS3Key: s3Key,
+        imageBucket: process.env.S3_BUCKET_DAILY_SPECIALS || "",
         tags: ["daily-special"],
         ingredients: [],
         likeCount: 0,

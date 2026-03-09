@@ -1,0 +1,85 @@
+/* ─── Onboarding Module Styles ───────────────────────────────────────────── */
+
+.ig-onboarding-shell {
+  width: min(900px, 100%);
+}
+
+.ig-onboard-card {
+  padding: 14px;
+}
+
+.ig-onboard-title {
+  margin: 0 0 10px;
+  font-size: 18px;
+}
+
+.ig-onboard-options {
+  display: grid;
+  gap: 8px;
+}
+
+.ig-onboard-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ig-onboard-textarea {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ig-onboard-child {
+  margin-top: 12px;
+}
+
+.ig-onboard-child-label {
+  display: block;
+  font-weight: 600;
+}
+
+.ig-recipe-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ig-recipe-pick-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+  text-align: left;
+}
+
+.ig-recipe-pick-card.is-active {
+  border-color: #dc2743;
+  box-shadow: inset 0 0 0 1px #dc2743;
+}
+
+.ig-recipe-pick-image {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.ig-recipe-pick-title {
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.ig-recipe-pick-cuisine {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ig-recipe-pick-state {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.ig-picker-actions {
+  justify-content: space-between;
+  margin-top: 4px;
+}

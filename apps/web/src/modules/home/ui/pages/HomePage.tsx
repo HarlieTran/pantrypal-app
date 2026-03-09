@@ -1,6 +1,7 @@
 import { HomeHero } from "../components/HomeHero";
 import type { HomeSpecial, PreferenceProfile } from "../../model/home.types";
 import type { RightPanel } from "../../../../app/App";
+import "../../styles/home.css";
 
 type ExpiringPreviewItem = {
   name: string;
