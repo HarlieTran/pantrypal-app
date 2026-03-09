@@ -4,10 +4,10 @@ applications:
       phases:
         preBuild:
           commands:
-            - npm ci
+            - cd $CODEBUILD_SRC_DIR && npm ci
         build:
           commands:
-            - npm run build --workspace=apps/web
+            - cd $CODEBUILD_SRC_DIR && npm run build --workspace=apps/web
       artifacts:
         baseDirectory: apps/web/dist
         files:
