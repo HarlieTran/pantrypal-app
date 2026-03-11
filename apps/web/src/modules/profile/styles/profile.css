@@ -148,22 +148,25 @@
   font-weight: 700;
 }
 
-.profile-confidence-bar-value.high,
+.profile-confidence-bar-value.high {
+  background: #2e7d32;
+}
 .profile-confidence-bar-fill.high {
   color: #2e7d32;
-  /* background: #2e7d32; */
 }
 
-.profile-confidence-bar-value.medium,
+.profile-confidence-bar-value.medium {
+  background: #e65100;
+}
 .profile-confidence-bar-fill.medium {
   color: #e65100;
-  /* background: #e65100; */
 }
 
-.profile-confidence-bar-value.low,
+.profile-confidence-bar-value.low {
+  background: #b71c1c;
+}
 .profile-confidence-bar-fill.low {
   color: #b71c1c;
-  /* background: #b71c1c; */
 }
 
 .profile-confidence-bar-track {
