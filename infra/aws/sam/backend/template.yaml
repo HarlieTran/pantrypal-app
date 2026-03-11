@@ -18,10 +18,14 @@ Parameters:
     Type: String
     Default: "http://localhost:5173"
 
+  CognitoRegion:
+    Type: String
+    Default: us-east-2
+
   CognitoUserPoolId:
     Type: String
 
-  CognitoClientId:
+  CognitoAppClientId:
     Type: String
 
   UnsplashAccessKey:
@@ -69,6 +73,10 @@ Parameters:
   CuratedRecipesPrefix:
     Type: String
     Default: images
+  
+  PantryTable:
+    Type: String
+    Default: pantrypal-pantry-items
 
 Resources:
   ApiFunction:
@@ -87,8 +95,9 @@ Resources:
           NODE_ENV: production
           DATABASE_URL: !Ref DatabaseUrl
           FRONTEND_ORIGIN: !Ref FrontendOrigin
+          COGNITO_REGION: !Ref CognitoRegion
           COGNITO_USER_POOL_ID: !Ref CognitoUserPoolId
-          COGNITO_CLIENT_ID: !Ref CognitoClientId
+          COGNITO_APP_CLIENT_ID: !Ref CognitoAppClientId
           UNSPLASH_ACCESS_KEY: !Ref UnsplashAccessKey
           SPOONACULAR_API_KEY: !Ref SpoonacularApiKey
           S3_BUCKET_DAILY_SPECIALS: !Ref S3BucketDailySpecials
@@ -101,6 +110,7 @@ Resources:
           AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
           CURATED_RECIPES_BUCKET: !Ref CuratedRecipesBucket
           CURATED_RECIPES_PREFIX: !Ref CuratedRecipesPrefix
+          PANTRY_TABLE: !Ref PantryTable
       Events:
         ApiGatewayProxy:
           Type: HttpApi
@@ -170,6 +180,14 @@ Resources:
                   - s3:GetObject
                   - s3:DeleteObject
                 Resource: !Sub "arn:aws:s3:::${S3BucketCommunityPosts}/*"
+
+              - Sid: S3PantryImages
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: arn:aws:s3:::pantrypal-user-pantry-uploads/*
+
               - Sid: BedrockInvoke
                 Effect: Allow
                 Action:
@@ -194,6 +212,8 @@ Resources:
                   - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityCommentsTable}/index/*"
                   - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityTopicsTable}"
                   - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/${CommunityTopicsTable}/index/*"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/pantrypal-pantry-items"
+                  - !Sub "arn:aws:dynamodb:us-east-2:175948132683:table/pantrypal-pantry-items/index/*"
 
   ApiErrorAlarm:
     Type: AWS::CloudWatch::Alarm

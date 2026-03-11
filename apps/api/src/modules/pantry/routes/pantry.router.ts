@@ -10,7 +10,7 @@ import {
   parseImageForIngredients,
   updatePantryItem,
 } from "../index.js";
-import { created, handleError, ok, parseBody, type JsonResponse } from "../../../common/routing/helpers.js";
+import { created, handleError, notFound, ok, parseBody, type JsonResponse } from "../../../common/routing/helpers.js";
 
 const addPantryItemSchema = z.object({
   rawName: z.string().min(1).max(200),
@@ -90,6 +90,9 @@ export async function handlePantryRoute(
         const item = await updatePantryItem(claims.sub, itemId, parsed);
         return ok({ item });
       } catch (error) {
+        if (error instanceof Error && error.name === "ConditionalCheckFailedException") {
+          return notFound("Item not found");
+        }
         return handleError(error, "Failed to update pantry item");
       }
     });
@@ -102,6 +105,9 @@ export async function handlePantryRoute(
         await deletePantryItem(claims.sub, itemId);
         return ok({ deleted: true });
       } catch (error) {
+        if (error instanceof Error && error.name === "ConditionalCheckFailedException") {
+          return notFound("Item not found");
+        }
         return handleError(error, "Failed to delete pantry item");
       }
     });

@@ -1,0 +1,383 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: PantryPal Complete Infrastructure - Cognito, RDS, S3, DynamoDB, Lambda, API Gateway
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+  FrontendOrigin:
+    Type: String
+    Default: "http://localhost:5173"
+  DBUsername:
+    Type: String
+    Default: postgres
+    NoEcho: true
+  DBPassword:
+    Type: String
+    NoEcho: true
+  UnsplashAccessKey:
+    Type: String
+    Default: ""
+    NoEcho: true
+  SpoonacularApiKeys:
+    Type: String
+    NoEcho: true
+    Description: Comma-separated API keys
+
+Resources:
+  # ============================================================
+  # COGNITO - User Authentication
+  # ============================================================
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub pantrypal-users-${Environment}
+      AutoVerifiedAttributes: [email]
+      UsernameAttributes: [email]
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: false
+        - Name: given_name
+          Required: false
+          Mutable: true
+        - Name: family_name
+          Required: false
+          Mutable: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub pantrypal-web-${Environment}
+      UserPoolId: !Ref UserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 7
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # ============================================================
+  # RDS - PostgreSQL Database
+  # ============================================================
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: !Sub pantrypal-db-subnet-${Environment}
+      DBSubnetGroupDescription: Subnet group for PantryPal RDS
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub pantrypal-db-sg-${Environment}
+      GroupDescription: Security group for PantryPal RDS
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub pantrypal-db-${Environment}
+      Engine: postgres
+      EngineVersion: "15.4"
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      PreferredBackupWindow: "03:00-04:00"
+      PreferredMaintenanceWindow: "mon:04:00-mon:05:00"
+
+  # ============================================================
+  # S3 - Storage Buckets
+  # ============================================================
+  RecipeImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub pantrypal-recipe-images-${Environment}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ["*"]
+            AllowedMethods: [GET, HEAD]
+            AllowedHeaders: ["*"]
+
+  DailySpecialsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub pantrypal-daily-specials-${Environment}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ["*"]
+            AllowedMethods: [GET, HEAD, PUT]
+            AllowedHeaders: ["*"]
+
+  PantryUploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub pantrypal-user-pantry-uploads-${Environment}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ["*"]
+            AllowedMethods: [GET, HEAD, PUT]
+            AllowedHeaders: ["*"]
+
+  CommunityPostsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub pantrypal-community-posts-${Environment}
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ["*"]
+            AllowedMethods: [GET, HEAD, PUT]
+            AllowedHeaders: ["*"]
+
+  # ============================================================
+  # DYNAMODB - Community Data
+  # ============================================================
+  CommunityTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub pantrypal-community-${Environment}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: gsi1
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  # ============================================================
+  # VPC - Network Infrastructure
+  # ============================================================
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub pantrypal-vpc-${Environment}
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub pantrypal-private-1-${Environment}
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      Tags:
+        - Key: Name
+          Value: !Sub pantrypal-private-2-${Environment}
+
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub pantrypal-lambda-sg-${Environment}
+      GroupDescription: Security group for Lambda functions
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+
+  # ============================================================
+  # LAMBDA - API Functions
+  # ============================================================
+  ApiHttpGateway:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods: [GET, POST, PATCH, PUT, DELETE, OPTIONS]
+        AllowHeaders: [Content-Type, Authorization]
+        AllowOrigins: [!Ref FrontendOrigin]
+
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub pantrypal-api-${Environment}
+      CodeUri: ../../../apps/api
+      Handler: src/lambda.handler
+      Runtime: nodejs20.x
+      Timeout: 30
+      MemorySize: 1024
+      Environment:
+        Variables:
+          FRONTEND_ORIGIN: !Ref FrontendOrigin
+          DATABASE_URL: !Sub "postgresql://${DBUsername}:${DBPassword}@${Database.Endpoint.Address}:5432/postgres?schema=pantrypal_app"
+          COGNITO_REGION: !Ref AWS::Region
+          COGNITO_USER_POOL_ID: !Ref UserPool
+          COGNITO_APP_CLIENT_ID: !Ref UserPoolClient
+          AWS_REGION: !Ref AWS::Region
+          BEDROCK_REGION: !Ref AWS::Region
+          BEDROCK_MODEL_ID: amazon.nova-lite-v1:0
+          CURATED_RECIPES_BUCKET: !Ref RecipeImagesBucket
+          CURATED_RECIPES_PREFIX: images
+          S3_BUCKET_DAILY_SPECIALS: !Ref DailySpecialsBucket
+          PANTRY_IMAGES_BUCKET: !Ref PantryUploadsBucket
+          S3_BUCKET_COMMUNITY_POSTS: !Ref CommunityPostsBucket
+          UNSPLASH_ACCESS_KEY: !Ref UnsplashAccessKey
+          SPOONACULAR_API_KEY: !Ref SpoonacularApiKeys
+          DYNAMODB_TABLE_COMMUNITY: !Ref CommunityTable
+      VpcConfig:
+        SecurityGroupIds: [!Ref LambdaSecurityGroup]
+        SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      Events:
+        ApiProxy:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref ApiHttpGateway
+            Method: ANY
+            Path: /{proxy+}
+      Policies:
+        - AWSLambdaVPCAccessExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: [bedrock:InvokeModel, bedrock:Converse]
+              Resource: "*"
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject]
+              Resource:
+                - !Sub "${RecipeImagesBucket.Arn}/*"
+                - !Sub "${DailySpecialsBucket.Arn}/*"
+                - !Sub "${PantryUploadsBucket.Arn}/*"
+                - !Sub "${CommunityPostsBucket.Arn}/*"
+            - Effect: Allow
+              Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:Query, dynamodb:UpdateItem, dynamodb:DeleteItem]
+              Resource:
+                - !GetAtt CommunityTable.Arn
+                - !Sub "${CommunityTable.Arn}/index/*"
+
+  DailySpecialWorker:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub pantrypal-daily-special-${Environment}
+      CodeUri: ../../../apps/api
+      Handler: src/jobs/prewarm.lambda.handler
+      Runtime: nodejs20.x
+      Timeout: 90
+      MemorySize: 1024
+      Environment:
+        Variables:
+          DATABASE_URL: !Sub "postgresql://${DBUsername}:${DBPassword}@${Database.Endpoint.Address}:5432/postgres?schema=pantrypal_app"
+          AWS_REGION: !Ref AWS::Region
+          BEDROCK_REGION: !Ref AWS::Region
+          BEDROCK_MODEL_ID: amazon.nova-lite-v1:0
+          S3_BUCKET_DAILY_SPECIALS: !Ref DailySpecialsBucket
+          UNSPLASH_ACCESS_KEY: !Ref UnsplashAccessKey
+      VpcConfig:
+        SecurityGroupIds: [!Ref LambdaSecurityGroup]
+        SubnetIds: [!Ref PrivateSubnet1, !Ref PrivateSubnet2]
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(5 0 * * ? *)
+            Enabled: true
+      Policies:
+        - AWSLambdaVPCAccessExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action: [bedrock:InvokeModel, bedrock:Converse]
+              Resource: "*"
+            - Effect: Allow
+              Action: [s3:PutObject, s3:GetObject]
+              Resource: !Sub "${DailySpecialsBucket.Arn}/*"
+
+Outputs:
+  ApiBaseUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ApiHttpGateway}.execute-api.${AWS::Region}.amazonaws.com"
+    Export:
+      Name: !Sub ${AWS::StackName}-ApiUrl
+
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub ${AWS::StackName}-UserPoolId
+
+  CognitoClientId:
+    Description: Cognito App Client ID
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub ${AWS::StackName}-ClientId
+
+  CognitoRegion:
+    Description: Cognito Region
+    Value: !Ref AWS::Region
+
+  DatabaseEndpoint:
+    Description: RDS Database Endpoint
+    Value: !GetAtt Database.Endpoint.Address
+
+  RecipeImagesBucket:
+    Description: S3 Bucket for Recipe Images
+    Value: !Ref RecipeImagesBucket
+
+  DailySpecialsBucket:
+    Description: S3 Bucket for Daily Specials
+    Value: !Ref DailySpecialsBucket
+
+  PantryUploadsBucket:
+    Description: S3 Bucket for Pantry Uploads
+    Value: !Ref PantryUploadsBucket
+
+  CommunityPostsBucket:
+    Description: S3 Bucket for Community Posts
+    Value: !Ref CommunityPostsBucket
+
+  CommunityTableName:
+    Description: DynamoDB Table for Community
+    Value: !Ref CommunityTable

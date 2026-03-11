@@ -211,9 +211,13 @@ export async function updatePantryItem(
     new UpdateCommand({
       TableName: PANTRY_TABLE,
       Key: { userId, itemId },
+      ConditionExpression: "userId = :uid",
       UpdateExpression: `SET ${setExprParts.join(", ")}`,
       ExpressionAttributeNames: expressionNames,
-      ExpressionAttributeValues: expressionValues,
+      ExpressionAttributeValues: {
+        ...expressionValues,
+        ":uid": userId,                             
+      },
       ReturnValues: "ALL_NEW",
     }),
   );
@@ -226,7 +230,12 @@ export async function updatePantryItem(
 
 export async function deletePantryItem(userId: string, itemId: string): Promise<void> {
   await dynamo.send(
-    new DeleteCommand({ TableName: PANTRY_TABLE, Key: { userId, itemId } }),
+    new DeleteCommand({ 
+      TableName: PANTRY_TABLE, 
+      Key: { userId, itemId },
+      ConditionExpression: "userId = :uid",
+      ExpressionAttributeValues: { ":uid": userId },
+    }),
   );
   await syncPantryMeta(userId);
 }
