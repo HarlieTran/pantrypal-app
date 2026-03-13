@@ -35,6 +35,8 @@ export type SpoonRecipeDetails = {
   readyInMinutes?: number;
   servings?: number;
   sourceUrl?: string;
+  cuisines?: string[];   // ← add this
+  diets?: string[];      // ← add this
   extendedIngredients?: Array<{
     id?: number;
     name?: string;

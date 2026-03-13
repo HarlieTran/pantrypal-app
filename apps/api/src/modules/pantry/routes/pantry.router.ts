@@ -10,7 +10,7 @@ import {
   parseImageForIngredients,
   updatePantryItem,
 } from "../index.js";
-import { created, handleError, notFound, ok, parseBody, type JsonResponse } from "../../../common/routing/helpers.js";
+import { created, handleError, notFound, forbidden, ok, parseBody, type JsonResponse } from "../../../common/routing/helpers.js";
 
 const addPantryItemSchema = z.object({
   rawName: z.string().min(1).max(200),
@@ -126,9 +126,15 @@ export async function handlePantryRoute(
   }
 
   if (method === "POST" && path === "/pantry/parse-image") {
-    return withAuth(authHeader, async () => {
+    return withAuth(authHeader, async (claims) => {
       try {
         const parsed = parseBody(rawBody, parseImageSchema);
+
+        const expectedPrefix = `pantry-uploads/${claims.sub}/`;
+        if (!parsed.imageKey.startsWith(expectedPrefix)) {
+          return forbidden("Access denied");
+        }
+        
         const ingredients = await parseImageForIngredients(parsed.imageKey);
         return ok({ ingredients });
       } catch (error) {

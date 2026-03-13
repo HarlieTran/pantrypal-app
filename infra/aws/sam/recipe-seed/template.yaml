@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: >
+  PantryPal Recipe Seed — nightly Lambda that fetches recipes from
+  Spoonacular and stores them in RDS
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+
+  SpoonacularApiKey:
+    Type: String
+    NoEcho: true
+
+  S3BucketRecipeCache:
+    Type: String
+    Default: pantrypal-recipe-cache
+
+Resources:
+  RecipeSeedFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "pantrypal-recipe-seed-${Stage}"
+      CodeUri: ../../../../.aws-sam/build-recipe-seed/RecipeSeedFunction
+      Handler: index.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Timeout: 900
+      MemorySize: 256
+      Environment:
+        Variables:
+          NODE_ENV: production
+          DATABASE_URL: !Ref DatabaseUrl
+          SPOONACULAR_API_KEY: !Ref SpoonacularApiKey
+          S3_BUCKET_RECIPE_CACHE: !Ref S3BucketRecipeCache
+      Events:
+        NightlySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 1 * * ? *)
+            Name: !Sub "pantrypal-recipe-seed-nightly-${Stage}"
+            Description: Nightly recipe seed from Spoonacular
+            Enabled: true
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref S3BucketRecipeCache   
+
+  RecipeSeedLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/pantrypal-recipe-seed-${Stage}"
+      RetentionInDays: 14
+
+Outputs:
+  RecipeSeedFunctionArn:
+    Value: !GetAtt RecipeSeedFunction.Arn

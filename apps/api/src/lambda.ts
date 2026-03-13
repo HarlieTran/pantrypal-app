@@ -9,9 +9,14 @@ type ApiGatewayEvent = {
   headers?: Record<string, string | undefined>;
 };
 
+const frontendOrigin = process.env.FRONTEND_ORIGIN;
+if (!frontendOrigin) {
+  throw new Error("FRONTEND_ORIGIN environment variable is required for security.");
+}
+
 const corsHeaders = {
   "content-type": "application/json",
-  "access-control-allow-origin": process.env.FRONTEND_ORIGIN || "*",
+  "access-control-allow-origin": frontendOrigin,
   "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
   "access-control-allow-headers": "Content-Type,Authorization",
 };

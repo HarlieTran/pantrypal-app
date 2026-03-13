@@ -78,6 +78,10 @@ Parameters:
     Type: String
     Default: pantrypal-pantry-items
 
+  S3BucketRecipeCache:
+    Type: String
+    Default: pantrypal-recipe-cache
+
 Resources:
   ApiFunction:
     Type: AWS::Serverless::Function
@@ -111,6 +115,7 @@ Resources:
           CURATED_RECIPES_BUCKET: !Ref CuratedRecipesBucket
           CURATED_RECIPES_PREFIX: !Ref CuratedRecipesPrefix
           PANTRY_TABLE: !Ref PantryTable
+          S3_BUCKET_RECIPE_CACHE: !Ref S3BucketRecipeCache
       Events:
         ApiGatewayProxy:
           Type: HttpApi
@@ -173,6 +178,11 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource: arn:aws:s3:::pantrypal-recipe-images/*
+              - Sid: S3RecipeCache
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: arn:aws:s3:::pantrypal-recipe-cache/*
               - Sid: S3CommunityPosts
                 Effect: Allow
                 Action:

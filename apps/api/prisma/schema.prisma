@@ -222,3 +222,39 @@ model PantryItem {
   @@index([userProfileId])
   @@index([userProfileId, expiryDate])
 }
+
+model Recipe {
+  id            Int      @id         // Spoonacular's ID — not auto-generated
+  title         String
+  image         String?              // your S3 URL after you download + upload
+  imageSourceUrl String?             // original Spoonacular image URL
+  cuisine       String[]             // ["italian", "mediterranean"]
+  dietTags      String[]             // ["vegetarian", "gluten-free", "dairy-free"]
+  readyMinutes  Int?
+  servings      Int?
+  sourceUrl     String?              // original recipe URL
+  summary       String?              // HTML summary from Spoonacular
+  instructions  Json?                // array of step strings
+  rawData       Json                 // full Spoonacular response, for safety
+  cachedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  ingredients   RecipeIngredient[]
+
+  @@map("recipes")
+}
+
+model RecipeIngredient {
+  id            String   @id @default(uuid())
+  recipeId      Int
+  canonicalName String               // normalized name — matches your ingredients table
+  rawName       String               // original string from Spoonacular
+  amount        Float?
+  unit          String?
+
+  recipe        Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+  @@index([canonicalName])           // critical for pantry matching queries
+  @@map("recipe_ingredients")
+}
