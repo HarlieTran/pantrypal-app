@@ -6,12 +6,12 @@ export type RecipeSuggestion = {
   missedCount: number;
   matchedIngredients: string[];
   missedIngredients: string[];
-  usedIngredients: string[];            
-  usedIngredientCount: number;          
-  missedIngredientCount: number;        
+  usedIngredients: string[];                  
   totalIngredientCount: number;
   expiringSoonUsedCount: number;
   score: number;
+  usedIngredientCount?: number;
+  missedIngredientCount?: number;
 };
 
 export type RecipeDetails = {

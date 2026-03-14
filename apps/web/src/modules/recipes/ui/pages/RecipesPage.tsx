@@ -68,7 +68,7 @@ export function RecipesPage({ token, onBack, embedded = false }: Props) {
               <div className="ig-recipe-card-body">
                 <div className="ig-recipe-card-body-content">
                   <h3>{r.title}</h3>
-                  <p>Used: {r.usedIngredientCount} - Missing: {r.missedIngredientCount}</p>
+                  <p>Used: {r.matchedCount ?? r.usedIngredientCount ?? 0} · Missing: {r.missedCount ?? r.missedIngredientCount ?? 0}</p>
                   <p className="ig-recipe-expire">Expiring-soon matched: {r.expiringSoonUsedCount}</p>
 
                   <div className="ig-chip-group-wrap">
