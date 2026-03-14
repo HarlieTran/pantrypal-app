@@ -88,10 +88,11 @@ export function HomeHero(props: HomeHeroProps) {
   const { topics } = useWeeklyTopics();
   
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   
-  const filteredPosts = selectedDate
-    ? posts.filter((p) => p.createdAt.startsWith(selectedDate))
-    : posts;
+  const filteredPosts = selectedTopicId
+  ? posts.filter((p) => p.topicId === selectedTopicId)
+  : posts;
 
   const today = new Date();
   const todayIndex = today.getDay();
@@ -154,8 +155,8 @@ export function HomeHero(props: HomeHeroProps) {
               <>
                 <WeeklyStoryCircles
                   topics={topics}
-                  selectedDate={selectedDate}
-                  onSelect={setSelectedDate}
+                  selectedTopicId={selectedTopicId}
+                  onSelect={setSelectedTopicId}
                 />
                 <CommunityFeed
                   posts={filteredPosts}

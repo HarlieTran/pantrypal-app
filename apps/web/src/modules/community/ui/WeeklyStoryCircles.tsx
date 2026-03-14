@@ -1,4 +1,5 @@
 import type { WeeklyTopic } from "../model/community.types";
+import { useState } from "react";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -11,43 +12,44 @@ function isToday(dateStr: string): boolean {
   return dateStr === new Date().toISOString().split("T")[0];
 }
 
+function CircleImage({ src, alt }: { src: string; alt: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken || !src) return <span className="weekly-circle-emoji">🍽️</span>;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="weekly-circle-image"
+      onError={() => setBroken(true)}
+    />
+  );
+}
+
 type Props = {
   topics: WeeklyTopic[];
-  selectedDate: string | null; // "YYYY-MM-DD" or null = show all
-  onSelect: (date: string | null) => void;
+  selectedTopicId: string | null;
+  onSelect: (topicId: string | null) => void;
 };
 
-export function WeeklyStoryCircles({ topics, selectedDate, onSelect }: Props) {
+export function WeeklyStoryCircles({ topics, selectedTopicId, onSelect }: Props) {
   return (
     <div className="weekly-circles">
       {topics.map((topic) => {
         const today = isToday(topic.date);
-        const selected = selectedDate === topic.date;
-        const hasImage = Boolean(topic.imageUrl);
+        const selected = selectedTopicId === topic.topicId;
         const label = getDayLabel(topic.date);
 
         return (
           <article
             key={topic.date}
             className="weekly-circle-item"
-            onClick={() => onSelect(selected ? null : topic.date)}
+            onClick={() => onSelect(selected ? null : topic.topicId)}
           >
-            {/* Ring */}
             <div className={`weekly-circle-ring ${today || selected ? 'is-today' : ''}`}>
               <div className="weekly-circle-inner">
-                {hasImage ? (
-                  <img
-                    src={topic.imageUrl!}
-                    alt={topic.title ?? label}
-                    className="weekly-circle-image"
-                  />
-                ) : (
-                  <span className="weekly-circle-emoji">🍽️</span>
-                )}
+                <CircleImage src={topic.imageUrl ?? ""} alt={topic.title ?? label} />
               </div>
             </div>
-
-            {/* Label */}
             <span className={`weekly-circle-label ${today ? 'is-today' : ''}`}>
               {today ? "Today" : label}
             </span>

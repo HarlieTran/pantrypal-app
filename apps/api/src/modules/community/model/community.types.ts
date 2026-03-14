@@ -9,6 +9,7 @@ export type CommunityTopic = {
   recipeId?: number;
   isPinned: string;                    // "true" | "false" — string for GSI
   imageUrl?: string;
+  imageS3Key?:string;
   description?: string;
   postCount: number;
   createdAt: string;                   // ISO string

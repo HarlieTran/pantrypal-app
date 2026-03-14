@@ -1,11 +1,34 @@
 import { PutCommand, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamo, COMMUNITY_TOPICS_TABLE } from "../../../common/db/dynamo.js";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import type { CommunityTopic } from "../model/community.types.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const TOPIC_SK = "METADATA";
+const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-2" });
+const DAILY_SPECIALS_BUCKET = process.env.S3_BUCKET_DAILY_SPECIALS || "";
+
+async function getFreshImageUrl(topic: Record<string, unknown>): Promise<string | null> {
+  // Prefer S3 key — generates a fresh signed URL
+  const s3Key = topic.imageS3Key as string | undefined;
+  if (s3Key && DAILY_SPECIALS_BUCKET) {
+    try {
+      const command = new GetObjectCommand({
+        Bucket: DAILY_SPECIALS_BUCKET,
+        Key: decodeURIComponent(s3Key),
+      });
+      return await getSignedUrl(s3, command, { expiresIn: 3600 });
+    } catch {
+      // fall through to stored URL
+    }
+  }
+
+  // Fallback: return stored imageUrl as-is (may be expired)
+  return (topic.imageUrl as string) ?? null;
+}
 
 // ─── Get topic by id ──────────────────────────────────────────────────────────
 
@@ -39,8 +62,11 @@ export async function getTodayPinnedTopic(): Promise<CommunityTopic | null> {
     }),
   );
 
-  const items = result.Items as CommunityTopic[];
-  return items?.[0] ?? null;
+  const item = result.Items?.[0];
+  if (!item) return null;
+
+  const freshImageUrl = await getFreshImageUrl(item);
+  return { ...(item as CommunityTopic), imageUrl: freshImageUrl ?? undefined };
 }
 
 // ─── Create pinned system topic ───────────────────────────────────────────────
@@ -54,6 +80,10 @@ export async function createPinnedSystemTopic(input: {
   const topicId = randomUUID();
   const now = new Date().toISOString();
 
+  const imageS3Key = input.imageUrl
+    ?.match(/\.s3\.[^.]+\.amazonaws\.com\/(.+?)(?:\?|$)/)?.[1]
+    ?? null;
+
   const topic: CommunityTopic = {
     topicId,
     sk: TOPIC_SK,
@@ -62,6 +92,7 @@ export async function createPinnedSystemTopic(input: {
     dailySpecialId: input.dailySpecialId,
     isPinned: "true",
     imageUrl: input.imageUrl ?? undefined,
+    imageS3Key: imageS3Key ?? undefined,
     description: input.description ?? undefined,
     postCount: 0,
     createdAt: now,
@@ -139,10 +170,13 @@ export async function getWeeklyTopics(): Promise<
 
     const topic = result.Items?.[0];
     if (topic) {
+      // Generate a fresh signed URL instead of returning the stored (expired) one
+      const freshImageUrl = await getFreshImageUrl(topic);
+
       results.push({
         topicId: topic.topicId as string,
         title: topic.title as string,
-        imageUrl: (topic.imageUrl as string) ?? null,
+        imageUrl: freshImageUrl,           // ← fresh URL
         createdAt: topic.createdAt as string,
         date,
       });
