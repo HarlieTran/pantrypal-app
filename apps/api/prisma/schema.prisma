@@ -258,3 +258,8 @@ model RecipeIngredient {
   @@index([canonicalName])           // critical for pantry matching queries
   @@map("recipe_ingredients")
 }
+
+model SeedOffset {
+  key    String @id
+  offset Int
+}

@@ -233,6 +233,24 @@ async function uploadRecipeImageToS3(
   }
 }
 
+// ─── Helper for offset persistence (implement according to your DB) ──────────
+const seedOffsets = new Map<string, number>();
+
+async function loadOffset(batchKey: string): Promise<number> {
+  const record = await prisma.seedOffset.findUnique({
+    where: { key: batchKey },
+  });
+  return record?.offset ?? 0;
+}
+
+async function saveOffset(batchKey: string, offset: number): Promise<void> {
+  await prisma.seedOffset.upsert({
+    where: { key: batchKey },
+    update: { offset },
+    create: { key: batchKey, offset },
+  });
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 export async function handler() {
@@ -244,15 +262,20 @@ export async function handler() {
 
   try {
     for (const batch of SEED_BATCHES) {
-      const label = JSON.stringify(batch.params);
-      console.log(`[recipe-seed] Batch: ${label}`);
+      const batchKey = JSON.stringify(batch.params);
+      console.log(`[recipe-seed] Batch: ${batchKey}`);
 
-      let fetched = 0;
-      let offset = 0;
+      // Load the last offset for this batch (start from where we left off)
+      let offset = await loadOffset(batchKey);
+      // Alternative quick start: use count of existing matching recipes
+      // offset = await prisma.recipe.count({ where: buildWhere(batch.params) });
+
       const batchSize = 10;
+      let newInBatch = 0;               // how many new recipes we've saved in this batch
+      const seenInBatch = new Set<number>(); // avoid duplicates within the same batch
 
-      while (fetched < batch.count) {
-        const toFetch = Math.min(batchSize, batch.count - fetched);
+      while (newInBatch < batch.count) {
+        const toFetch = Math.min(batchSize, batch.count - newInBatch);
 
         let searchResults: SpoonSearchResult[] = [];
         try {
@@ -263,19 +286,38 @@ export async function handler() {
           break;
         }
 
-        if (searchResults.length === 0) break;
+        if (searchResults.length === 0) {
+          console.log(`[recipe-seed] No more results for ${batchKey} at offset ${offset}`);
+          break; // no more recipes from Spoonacular for this query
+        }
+
+        // ─── ALWAYS advance offset by the number of results we fetched ───
+        offset += searchResults.length;
+        // Save progress after each page (in case of interruption)
+        await saveOffset(batchKey, offset);
+
+        let foundInPage = 0; // new recipes found in this page
 
         for (const result of searchResults) {
+          // Skip if we've already seen this ID in the current batch
+          if (seenInBatch.has(result.id)) {
+            console.log(`[recipe-seed] Skipping duplicate in batch: ${result.id}`);
+            continue;
+          }
+          seenInBatch.add(result.id);
+
           const existing = await prisma.recipe.findUnique({
             where: { id: result.id },
             select: { id: true, image: true, imageSourceUrl: true },
           });
 
+          // Case 1: Fully seeded recipe – skip detail fetch
           if (existing && existing.image) {
             totalSkipped++;
             continue;
           }
 
+          // Case 2: Partial recipe – backfill image only
           if (existing && !existing.image && existing.imageSourceUrl) {
             const imageS3Key = await uploadRecipeImageToS3(existing.imageSourceUrl, existing.id);
             if (imageS3Key) {
@@ -283,18 +325,20 @@ export async function handler() {
                 where: { id: existing.id },
                 data: { image: imageS3Key },
               });
-              console.log(`[recipe-seed] 📸 Backfilled image for recipe ${existing.id}`);
             }
-            totalSkipped++;  // still counts as skipped since we didn't re-fetch from Spoonacular
+            totalSkipped++;
             await sleep(DELAY_MS);
             continue;
           }
 
+          // Case 3: Brand new recipe – fetch full details
           try {
             const detail = await fetchRecipeDetail(result.id);
             await sleep(DELAY_MS);
             await saveRecipe(detail);
             totalSaved++;
+            newInBatch++;      // count toward batch target
+            foundInPage++;
             console.log(`[recipe-seed] ✓ ${detail.title}`);
           } catch (err) {
             totalFailed++;
@@ -302,9 +346,14 @@ export async function handler() {
           }
         }
 
-        fetched += searchResults.length;
-        offset += searchResults.length;
+        // If a whole page returned zero new recipes, we're scanning already‑seen territory.
+        // That's okay – we keep advancing offset. Log a warning for visibility.
+        if (foundInPage === 0) {
+          console.log(`[recipe-seed] Page at offset ${offset - searchResults.length} had 0 new recipes for ${batchKey}`);
+        }
       }
+
+      console.log(`[recipe-seed] Batch ${batchKey} complete: ${newInBatch}/${batch.count} new recipes`);
     }
 
     console.log(`[recipe-seed] Done — saved: ${totalSaved}, skipped: ${totalSkipped}, failed: ${totalFailed}`);
@@ -320,3 +369,4 @@ export async function handler() {
     await prisma.$disconnect();
   }
 }
+
