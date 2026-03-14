@@ -2,10 +2,14 @@ export type RecipeSuggestion = {
   id: number;
   title: string;
   image: string;
-  usedIngredientCount: number;
-  missedIngredientCount: number;
-  usedIngredients: string[];
+  matchedCount: number;
+  missedCount: number;
+  matchedIngredients: string[];
   missedIngredients: string[];
+  usedIngredients: string[];            
+  usedIngredientCount: number;          
+  missedIngredientCount: number;        
+  totalIngredientCount: number;
   expiringSoonUsedCount: number;
   score: number;
 };
