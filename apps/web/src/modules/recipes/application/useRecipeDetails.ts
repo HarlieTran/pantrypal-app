@@ -2,6 +2,8 @@ import { useState } from "react";
 import { fetchRecipeDetails, cookRecipe } from "../infra/recipes.api";
 import type { RecipeDetails, RecipeSuggestion, CookRecipeResult } from "../model/recipes.types";
 
+export type CookNoOpReason = { unmatchedCount: number; warningCount: number };
+
 export function useRecipeDetails(token: string, suggestions: RecipeSuggestion[]) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeDetails | null>(null);
@@ -52,10 +54,7 @@ export function useRecipeDetails(token: string, suggestions: RecipeSuggestion[])
 
       const changedCount = applied.updatedItems.length + applied.removedItems.length;
       if (changedCount === 0) {
-        const unmatched = applied.unmatchedIngredients.length;
-        const warningMsg = applied.warnings.length > 0 ? ` Warnings: ${applied.warnings.length}.` : "";
-        alert(`No pantry quantities were deducted. Matched changes: 0. Unmatched ingredients: ${unmatched}.${warningMsg}`);
-        return null;
+        return { noOp: true, unmatchedCount: applied.unmatchedIngredients.length, warningCount: applied.warnings.length } as unknown as CookRecipeResult;
       }
 
       return applied;

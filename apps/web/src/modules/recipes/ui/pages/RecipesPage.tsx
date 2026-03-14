@@ -2,6 +2,9 @@ import { useRecipeSuggestions } from "../../application/useRecipeSuggestions";
 import { useRecipeDetails } from "../../application/useRecipeDetails";
 import { RecipeDetailsModal } from "../components/RecipeDetailsModal";
 import "../../styles/recipes.css";
+import { CookResultModal } from "../components/CookResultModal";
+import { useState } from "react";
+import type { CookRecipeResult } from "../../model/recipes.types";
 
 interface Props {
   token: string;
@@ -27,16 +30,29 @@ export function RecipesPage({ token, onBack, embedded = false }: Props) {
     retry,
   } = useRecipeDetails(token, items);
 
+  const [cookResult, setCookResult] = useState<{ result: CookRecipeResult; title: string; noOp?: boolean } | null>(null);
+
   const handleCookConfirm = async () => {
     try {
       const applied = await confirm();
       if (applied) {
+        const isNoOp = (applied as any).noOp === true;
+        if (isNoOp) {
+          const a = applied as any;
+          setCookResult({
+            result: { ...applied, updatedItems: [], removedItems: [], unmatchedIngredients: Array(a.unmatchedCount).fill("?"), warnings: [] },
+            title: items.find((r) => r.id === selectedId)?.title ?? "Recipe",
+            noOp: true,
+          });
+          close();
+          return;
+        }
         close();
-        alert(`Pantry updated successfully. Updated: ${applied.updatedItems.length}, Removed: ${applied.removedItems.length}.`);
-        onBack();
+        const title = items.find((r) => r.id === selectedId)?.title ?? "Recipe";
+        setCookResult({ result: applied, title });
       }
     } catch {
-      // Error already set in hook
+      // error already set in hook
     }
   };
 
@@ -113,6 +129,16 @@ export function RecipesPage({ token, onBack, embedded = false }: Props) {
           onCookPreview={() => void preview()}
           onCookConfirm={() => void handleCookConfirm()}
         />
+
+        {cookResult && (
+          <CookResultModal
+            result={cookResult.result}
+            recipeTitle={cookResult.title}
+            noOp={cookResult.noOp ?? false}
+            onClose={() => { setCookResult(null); if (!cookResult.noOp) onBack(); }}
+            onGoToPantry={() => { setCookResult(null); onBack(); }}
+          />
+        )}
     </>
   );
 
