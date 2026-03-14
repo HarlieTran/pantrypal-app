@@ -130,7 +130,11 @@ export function HomeHero(props: HomeHeroProps) {
             {centerView === "pantry" ? (
               <PantryPage token={token} onBack={onHome} onGenerateRecipes={onRecipesNavigate} embedded />
             ) : centerView === "recipes" ? (
-              <RecipesPage token={token} onBack={onHome} embedded />
+              <RecipesPage 
+                token={token} 
+                onBack={onHome} 
+                onPantryNavigate={onPantryNavigate}
+                embedded />
             ) : centerView === "profile" ? (
               <ProfilePage
                 token={token}

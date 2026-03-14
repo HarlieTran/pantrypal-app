@@ -9,10 +9,11 @@ import type { CookRecipeResult } from "../../model/recipes.types";
 interface Props {
   token: string;
   onBack: () => void;
+  onPantryNavigate: () => void;
   embedded?: boolean;
 }
 
-export function RecipesPage({ token, onBack, embedded = false }: Props) {
+export function RecipesPage({ token, onBack, onPantryNavigate, embedded = false }: Props) {
   const { items, loading, error, pantrySignature, load } = useRecipeSuggestions(token);
   const {
     selectedId,
@@ -135,8 +136,8 @@ export function RecipesPage({ token, onBack, embedded = false }: Props) {
             result={cookResult.result}
             recipeTitle={cookResult.title}
             noOp={cookResult.noOp ?? false}
-            onClose={() => { setCookResult(null); if (!cookResult.noOp) onBack(); }}
-            onGoToPantry={() => { setCookResult(null); onBack(); }}
+            onClose={() => setCookResult(null)}
+            onGoToPantry={() => { setCookResult(null); onPantryNavigate(); }}
           />
         )}
     </>
