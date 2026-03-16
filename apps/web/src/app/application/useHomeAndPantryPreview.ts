@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchPantry } from "../../modules/pantry";
 import type { HomeSpecial } from "../../modules/home";
 import type { PantryItem } from "../../modules/pantry";
@@ -66,20 +66,22 @@ export function useHomeAndPantryPreview(token: string, isLoggedIn: boolean, isBo
     })();
   }, []);
 
-  useEffect(() => {
+  const refreshExpiringItems = useCallback(async () => {
     if (!isLoggedIn || isBootstrapping) {
       setExpiringItems([]);
       return;
     }
-    void (async () => {
-      try {
-        const data = await fetchPantry(token);
-        setExpiringItems(mapExpiringItems(data.items));
-      } catch {
-        setExpiringItems([]);
-      }
-    })();
+    try {
+      const data = await fetchPantry(token);
+      setExpiringItems(mapExpiringItems(data.items));
+    } catch {
+      setExpiringItems([]);
+    }
   }, [isLoggedIn, isBootstrapping, token]);
+
+  useEffect(() => {
+    void refreshExpiringItems();
+  }, [refreshExpiringItems]);
 
   useEffect(() => {
     if (!special?.imageUrl) {
@@ -98,5 +100,6 @@ export function useHomeAndPantryPreview(token: string, isLoggedIn: boolean, isBo
     homeLoading,
     homeError,
     expiringItems,
+    refreshExpiringItems,
   };
 }

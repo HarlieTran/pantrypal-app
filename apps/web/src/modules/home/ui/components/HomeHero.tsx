@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import type { HomeSpecial } from "../../model/home.types";
 import type { ExpiringPreviewItem } from "../../model/home.shared.types";
 import type { RightPanel } from "../../../../app/App";
@@ -55,6 +55,8 @@ type HomeHeroProps = {
   onRightPanelChange: (panel: RightPanel) => void;
   onProfileNavigate: () => void;
   onEditProfileNavigate: () => void;
+  onPantryMutated: () => void;
+  homeResetKey: number;
 };
 
 const WEEK_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -80,6 +82,7 @@ export function HomeHero(props: HomeHeroProps) {
     onProfileNavigate,
     onEditProfileNavigate,
     onRightPanelChange,
+    homeResetKey,
   } = props;
 
   const { posts, pinnedTopic, nextCursor, loading, loadingMore, error, loadMore, refresh } =
@@ -90,11 +93,29 @@ export function HomeHero(props: HomeHeroProps) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
 
+  const [showComposer, setShowComposer] = useState(false);
+  const [pantryKey, setPantryKey] = useState(0);
+
   useEffect(() => {
     if (centerView !== "community") {
       setSelectedTopicId(null);
     }
   }, [centerView]);
+
+  useEffect(() => {
+    setSelectedTopicId(null);
+    setSelectedDate(null);
+  }, [homeResetKey]);
+
+  useEffect(() => {
+    if (pantryKey > 0) {
+      props.onPantryMutated();
+    }
+  }, [pantryKey]);
+
+  const triggerPantryRefresh = useCallback(() => {
+    setPantryKey((k) => k + 1);
+  }, []);
   
   const filteredPosts = selectedTopicId
   ? posts.filter((p) => p.topicId === selectedTopicId)
@@ -116,8 +137,7 @@ export function HomeHero(props: HomeHeroProps) {
     [special?.dishName, todayIndex],
   );
 
-  const [showComposer, setShowComposer] = useState(false);
-  const [pantryKey, setPantryKey] = useState(0);
+
 
   return (
     <section className="ig-home">
@@ -141,13 +161,14 @@ export function HomeHero(props: HomeHeroProps) {
                 token={token} 
                 onBack={onHome} 
                 onGenerateRecipes={onRecipesNavigate} 
+                onMutated={props.onPantryMutated}
                 embedded />
             ) : centerView === "recipes" ? (
               <RecipesPage 
                 token={token} 
                 onBack={onHome} 
                 onPantryNavigate= {() => {
-                  setPantryKey((k) => k + 1);   
+                  triggerPantryRefresh();   
                   onPantryNavigate();
                 }}
                 embedded />

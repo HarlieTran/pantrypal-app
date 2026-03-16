@@ -9,14 +9,30 @@ interface Props {
   token: string;
   onBack: () => void;
   onGenerateRecipes: () => void;
+  onMutated?: () => void;
   embedded?: boolean;
 }
 
 type Modal = "none" | "add" | "upload";
 
-export function PantryPage({ token, onBack, onGenerateRecipes, embedded = false }: Props) {
+export function PantryPage({ token, onBack, onGenerateRecipes, onMutated, embedded = false }: Props) {
   const { items, meta, loading, error, expiredCount, expiringSoonCount, load, add, remove } = usePantry(token);
   const [modal, setModal] = useState<Modal>("none");
+
+  const handleLoad = async () => {
+    await load();
+    onMutated?.();
+  };
+
+  const handleAdd = async (data: { rawName: string; quantity: number; unit: string; expiryDate?: string; notes?: string }) => {
+    await add(data);
+    onMutated?.();
+  };
+
+  const handleRemove = async (itemId: string) => {
+    await remove(itemId);
+    onMutated?.();
+  };
 
   const content = (
     <>
@@ -51,15 +67,15 @@ export function PantryPage({ token, onBack, onGenerateRecipes, embedded = false 
         <section className="ig-card ig-pantry-content">
           {loading ? <div className="ig-page-note">Loading pantry...</div> : null}
           {!loading && error ? <div className="ig-error-note">{error}</div> : null}
-          {!loading && !error ? <PantryItemList items={items} onDelete={remove} /> : null}
+          {!loading && !error ? <PantryItemList items={items} onDelete={handleRemove} /> : null}
         </section>
 
         {modal === "add" ? (
-          <AddItemModal onAdd={add} onClose={() => setModal("none")} />
+          <AddItemModal onAdd={handleAdd} onClose={() => setModal("none")} />
         ) : null}
 
         {modal === "upload" ? (
-          <ImageUploadParser token={token} onComplete={load} onClose={() => setModal("none")} />
+          <ImageUploadParser token={token} onComplete={handleLoad} onClose={() => setModal("none")} />
         ) : null}
     </>
   );

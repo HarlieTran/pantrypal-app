@@ -50,6 +50,8 @@ type HomePageProps = {
   onRequestMorePicks: () => void;
   onProfileNavigate: () => void;
   onEditProfileNavigate: () => void;
+  onPantryMutated: () => void;
+  homeResetKey: number;
 };
 
 

@@ -13,6 +13,7 @@ export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "on
 
 export function App() {
   const [signupStage, setSignupStage] = useState<'form' | 'verify'>('form');
+  const [homeResetKey, setHomeResetKey] = useState(0);
   const { session, login, logout } = useSession();
   
   const {
@@ -66,11 +67,12 @@ export function App() {
     profileEmail: profile?.email ?? undefined,
   });
   
-  const { special, heroImageSrc, homeLoading, homeError, expiringItems } = useHomeAndPantryPreview(
-    token,
-    isLoggedIn,
-    session.status === "bootstrapping",
-  );
+  const { special, heroImageSrc, homeLoading, homeError, expiringItems, refreshExpiringItems } = 
+    useHomeAndPantryPreview(
+      token,
+      isLoggedIn,
+      session.status === "bootstrapping",
+    );
 
   const onLogout = () => {
     logout();
@@ -135,7 +137,8 @@ export function App() {
         : view === "recipes" ? "recipes" 
         : view === "profile" ? "profile"
         : view === "edit-profile" ? "edit-profile"
-        : "community"
+        : view === "community" ? "community"
+        : "home"
       }
       heroImageSrc={heroImageSrc}
       special={special}
@@ -165,7 +168,10 @@ export function App() {
       onGivenNameChange={setGivenName}
       onFamilyNameChange={setFamilyName}
       onCodeChange={setCode}
-      onHome={() => setView("home")}
+      onHome={() => {
+        setView("home");
+        setHomeResetKey((k) => k + 1);
+      }}
       onLogout={onLogout}
       onLoginNavigate={() => { 
         setAuthError(""); 
@@ -176,7 +182,10 @@ export function App() {
         setAuthError(""); 
         setSignupStage('form');
         setRightPanel("signup"); }}
-      onPantryNavigate={() => setView("pantry")}
+      onPantryNavigate={() => {
+        setView("pantry")
+        void refreshExpiringItems();
+      }}
       onLogin={onLogin}
       onSignUp={onSignUp}
       onConfirm={onConfirm}
@@ -191,6 +200,8 @@ export function App() {
       onRequestMorePicks={() => undefined}
       onProfileNavigate={() => setView("profile")}
       onEditProfileNavigate={() => setView("edit-profile")}
+      onPantryMutated={refreshExpiringItems}
+      homeResetKey={homeResetKey}
     />
   );
 }
