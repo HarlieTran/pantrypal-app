@@ -1,4 +1,4 @@
-import { PutCommand, GetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, GetCommand, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamo, COMMUNITY_TOPICS_TABLE } from "../../../common/db/dynamo.js";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -11,23 +11,51 @@ const TOPIC_SK = "METADATA";
 const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-2" });
 const DAILY_SPECIALS_BUCKET = process.env.S3_BUCKET_DAILY_SPECIALS || "";
 
-async function getFreshImageUrl(topic: Record<string, unknown>): Promise<string | null> {
-  // Prefer S3 key — generates a fresh signed URL
-  const s3Key = topic.imageS3Key as string | undefined;
+async function getFreshImageUrl(topic: Record<string, unknown>): Promise<{ url: string | null; resolvedKey: string | null }> {
+  let s3Key = topic.imageS3Key as string | undefined;
+  let extractedKey: string | null = null;
+
+  if (!s3Key) {
+    const storedUrl = topic.imageUrl as string | undefined;
+    if (storedUrl) {
+      const match = storedUrl.match(/\.amazonaws\.com\/(.+?)(?:\?|$)/)?.[1];
+      if (match) {
+        s3Key = decodeURIComponent(match);
+        extractedKey = s3Key;
+      }
+    }
+  }
+
   if (s3Key && DAILY_SPECIALS_BUCKET) {
     try {
       const command = new GetObjectCommand({
         Bucket: DAILY_SPECIALS_BUCKET,
-        Key: decodeURIComponent(s3Key),
+        Key: s3Key,
       });
-      return await getSignedUrl(s3, command, { expiresIn: 3600 });
-    } catch {
-      // fall through to stored URL
+      const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      return { url, resolvedKey: extractedKey };
+    } catch (err) {
+      console.warn(`[topic] Failed to sign S3 URL for key "${s3Key}":`, err);
     }
   }
 
-  // Fallback: return stored imageUrl as-is (may be expired)
-  return (topic.imageUrl as string) ?? null;
+  return { url: null, resolvedKey: null };
+}
+
+async function healTopicImageKey(topicId: string, s3Key: string): Promise<void> {
+  try {
+    await dynamo.send(
+      new UpdateCommand({
+        TableName: COMMUNITY_TOPICS_TABLE,
+        Key: { topicId, sk: TOPIC_SK },
+        UpdateExpression: "SET imageS3Key = :key",
+        ConditionExpression: "attribute_not_exists(imageS3Key)",
+        ExpressionAttributeValues: { ":key": s3Key },
+      }),
+    );
+  } catch {
+    // ConditionalCheckFailedException = already set, that's fine
+  }
 }
 
 // ─── Get topic by id ──────────────────────────────────────────────────────────
@@ -65,7 +93,10 @@ export async function getTodayPinnedTopic(): Promise<CommunityTopic | null> {
   const item = result.Items?.[0];
   if (!item) return null;
 
-  const freshImageUrl = await getFreshImageUrl(item);
+  const { url: freshImageUrl, resolvedKey } = await getFreshImageUrl(item);
+  if (resolvedKey) {
+    healTopicImageKey(item.topicId as string, resolvedKey).catch(() => {});
+  }
   return { ...(item as CommunityTopic), imageUrl: freshImageUrl ?? undefined };
 }
 
@@ -171,12 +202,16 @@ export async function getWeeklyTopics(): Promise<
     const topic = result.Items?.[0];
     if (topic) {
       // Generate a fresh signed URL instead of returning the stored (expired) one
-      const freshImageUrl = await getFreshImageUrl(topic);
+      const { url: freshImageUrl, resolvedKey } = await getFreshImageUrl(topic);
+
+      if (resolvedKey) {
+        healTopicImageKey(topic.topicId as string, resolvedKey).catch(() => {});
+      }
 
       results.push({
         topicId: topic.topicId as string,
         title: topic.title as string,
-        imageUrl: freshImageUrl,           // ← fresh URL
+        imageUrl: freshImageUrl,
         createdAt: topic.createdAt as string,
         date,
       });

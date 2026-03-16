@@ -14,7 +14,7 @@ function isToday(dateStr: string): boolean {
 
 function CircleImage({ src, alt }: { src: string; alt: string }) {
   const [broken, setBroken] = useState(false);
-  if (broken || !src) return <span className="weekly-circle-emoji">🍽️</span>;
+  if (broken || !src) return <span style={{ fontSize: 28 }}>🍽️</span>;
   return (
     <img
       src={src}
