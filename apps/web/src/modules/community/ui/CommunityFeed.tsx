@@ -1,5 +1,5 @@
 import type { CommunityPostView, CommunityTopic } from "../model/community.types";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CommentSection } from "./CommentSection";
 import { usePostInteractions } from "../application/usePostInteractions";
 import "../styles/community.css";
@@ -170,7 +170,7 @@ function PostCard({ post, showThreadLine = true, token, isLoggedIn, currentUserI
             disabled={!isLoggedIn || liking}
             className={`community-post-action-btn ${liked ? 'is-liked' : ''}`}
           >
-            {liked ? "♥" : "♡"} <span>{likeCount}</span>
+            {liking ? "···" : liked ? "♥" : "♡"} <span>{likeCount}</span>
           </button>
           <button
             onClick={() => setCommentsOpen((prev) => !prev)}
@@ -273,6 +273,8 @@ export function CommunityFeed({
   onLoginNavigate,
   onCreatePost,
 }: CommunityFeedProps) {
+  const feedItems = useMemo(() => groupPostsIntoFeed(posts), [posts]);
+
   if (loading) {
     return <div className="community-feed-loading">Loading community...</div>;
   }
@@ -286,7 +288,6 @@ export function CommunityFeed({
       {/* Create post trigger — authenticated only */}
       {isLoggedIn && onCreatePost && (
         <button onClick={onCreatePost} className="community-feed-create-post">
-          {/* <div className="community-feed-create-avatar" /> */}
           <span className="community-feed-create-placeholder">
             Share something from your kitchen...
           </span>
@@ -308,21 +309,23 @@ export function CommunityFeed({
           No posts yet. Be the first to share something!
         </div>
       ) : (
-        groupPostsIntoFeed(posts).map((item) =>
+        feedItems.map((item) =>
           item.kind === "thread" ? (
-            <ThreadGroupCard 
-              key={item.group.root.postId} 
+            <ThreadGroupCard
+              key={item.group.root.postId}
               group={item.group}
               token={token}
-              isLoggedIn={isLoggedIn} 
-              currentUserId={currentUserId} />
+              isLoggedIn={isLoggedIn}
+              currentUserId={currentUserId}
+            />
           ) : (
-            <PostCard 
-              key={item.post.postId} 
-              post={item.post} 
-              token={token} 
-              isLoggedIn={isLoggedIn} 
-              currentUserId={currentUserId} />
+            <PostCard
+              key={item.post.postId}
+              post={item.post}
+              token={token}
+              isLoggedIn={isLoggedIn}
+              currentUserId={currentUserId}
+            />
           )
         )
       )}
