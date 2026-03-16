@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { HomeSpecial } from "../../model/home.types";
 import type { ExpiringPreviewItem } from "../../model/home.shared.types";
 import type { RightPanel } from "../../../../app/App";
@@ -89,6 +89,12 @@ export function HomeHero(props: HomeHeroProps) {
   
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (centerView !== "community") {
+      setSelectedTopicId(null);
+    }
+  }, [centerView]);
   
   const filteredPosts = selectedTopicId
   ? posts.filter((p) => p.topicId === selectedTopicId)
@@ -111,6 +117,7 @@ export function HomeHero(props: HomeHeroProps) {
   );
 
   const [showComposer, setShowComposer] = useState(false);
+  const [pantryKey, setPantryKey] = useState(0);
 
   return (
     <section className="ig-home">
@@ -129,12 +136,20 @@ export function HomeHero(props: HomeHeroProps) {
         <div className="ig-content-grid">
           <section className="ig-center-col">
             {centerView === "pantry" ? (
-              <PantryPage token={token} onBack={onHome} onGenerateRecipes={onRecipesNavigate} embedded />
+              <PantryPage 
+                key={pantryKey}
+                token={token} 
+                onBack={onHome} 
+                onGenerateRecipes={onRecipesNavigate} 
+                embedded />
             ) : centerView === "recipes" ? (
               <RecipesPage 
                 token={token} 
                 onBack={onHome} 
-                onPantryNavigate={onPantryNavigate}
+                onPantryNavigate= {() => {
+                  setPantryKey((k) => k + 1);   
+                  onPantryNavigate();
+                }}
                 embedded />
             ) : centerView === "profile" ? (
               <ProfilePage
