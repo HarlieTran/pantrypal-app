@@ -96,11 +96,7 @@ export function HomeHero(props: HomeHeroProps) {
   const [showComposer, setShowComposer] = useState(false);
   const [pantryKey, setPantryKey] = useState(0);
 
-  useEffect(() => {
-    if (centerView !== "community") {
-      setSelectedTopicId(null);
-    }
-  }, [centerView]);
+
 
   useEffect(() => {
     setSelectedTopicId(null);
@@ -144,7 +140,10 @@ export function HomeHero(props: HomeHeroProps) {
       <HomeSidebar
         centerView={centerView}
         isLoggedIn={isLoggedIn}
-        onHome={onHome}
+        onHome={() => {
+          setSelectedTopicId(null);
+          onHome();
+        }}
         onPantryNavigate={onPantryNavigate}
         onRecipesNavigate={onRecipesNavigate}
         onProfileNavigate={onProfileNavigate}

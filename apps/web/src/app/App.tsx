@@ -137,8 +137,7 @@ export function App() {
         : view === "recipes" ? "recipes" 
         : view === "profile" ? "profile"
         : view === "edit-profile" ? "edit-profile"
-        : view === "community" ? "community"
-        : "home"
+        : "community"
       }
       heroImageSrc={heroImageSrc}
       special={special}
