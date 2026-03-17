@@ -31,7 +31,17 @@ export function usePostInteractions(
   // when the server sends new prop values, not on every liking toggle.
 
   async function handleLike() {
-    if (!token || liking) return;
+    if (!token || liking) {
+      if (!token) {
+        console.debug("[community-like] blocked: missing token", {
+          postId,
+          postUserId,
+          initialLiked,
+          initialLikeCount,
+        });
+      }
+      return;
+    }
 
     // Mark as interacted — from this point on, props no longer override state
     hasInteracted.current = true;
@@ -45,11 +55,23 @@ export function usePostInteractions(
     setLikeCount(wasCount + (wasLiked ? -1 : 1));
 
     try {
+      console.debug("[community-like] request", {
+        postId,
+        postUserId,
+        wasLiked,
+        wasCount,
+      });
       const result = await togglePostLike(token, postId, postUserId);
+      console.debug("[community-like] response", result);
       // Apply confirmed server state
       setLiked(result.liked);
       setLikeCount(result.likeCount);
-    } catch {
+    } catch (error) {
+      console.debug("[community-like] error", {
+        postId,
+        postUserId,
+        error,
+      });
       // Revert to pre-click snapshot on failure
       setLiked(wasLiked);
       setLikeCount(wasCount);
