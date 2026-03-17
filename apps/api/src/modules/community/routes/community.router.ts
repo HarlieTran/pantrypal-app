@@ -218,7 +218,7 @@ export async function handleCommunityRoute(
       const feed =
         userId && preferences
           ? await getPersonalizedFeed(userId, preferences, cursor)
-          : await getPublicFeed(cursor);
+          : await getPublicFeed(cursor, userId ?? undefined);
 
       return ok({
         ...feed,

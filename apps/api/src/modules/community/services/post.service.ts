@@ -121,8 +121,13 @@ async function fetchGlobalFeed(cursor?: string): Promise<{
 
 // ─── Get public feed (guest) ──────────────────────────────────────────────────
 
-export async function getPublicFeed(cursor?: string): Promise<CommunityFeedResponse> {
+export async function getPublicFeed(cursor?: string, userId?: string): Promise<CommunityFeedResponse> {
   const { posts, lastEvaluatedKey } = await fetchGlobalFeed(cursor);
+
+  // Batch-check likes if a logged-in userId is provided
+  const likedPostIds = userId
+    ? await batchGetLikedPostIds(userId, posts.map((p) => p.postId))
+    : new Set<string>();
 
   // Resolve image URLs and score
   const scored = await Promise.all(
@@ -136,7 +141,12 @@ export async function getPublicFeed(cursor?: string): Promise<CommunityFeedRespo
       }
       
       return {
-        post: { ...post, imageUrl: finalImageUrl, commentCount: actualCommentCount },
+        post: {
+          ...post,
+          imageUrl: finalImageUrl,
+          commentCount: actualCommentCount,
+          isLikedByCurrentUser: likedPostIds.has(post.postId),
+        },
         score: scorePostForGuest(post),
       };
     }),
