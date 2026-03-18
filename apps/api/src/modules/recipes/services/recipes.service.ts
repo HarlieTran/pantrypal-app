@@ -111,6 +111,9 @@
 // }
 
 import { prisma } from "../../../common/db/prisma.js";
+import { s3 } from "../../../common/storage/s3.js";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getPantryItems } from "../../pantry/index.js";
 import { getUserFeedPreferencesBySubject } from "../../users/index.js";
 import { findRecipesFromPantry } from "./recipe-query.service.js";
@@ -118,6 +121,27 @@ import { rankRecipes, type ScoredRecipe } from "./recipe-scorer.service.js";
 import { getRecipeInformation } from "./spoonacular.service.js";  // still used for details
 
 export type RecipeSuggestion = ScoredRecipe;
+
+const RECIPE_CACHE_BUCKET = process.env.S3_BUCKET_RECIPE_CACHE || "";
+
+async function resolveRecipeImage(imageS3Key: string | null | undefined, fallbackUrl: string | null | undefined): Promise<string> {
+  if (imageS3Key && RECIPE_CACHE_BUCKET) {
+    try {
+      return await getSignedUrl(
+        s3,
+        new GetObjectCommand({
+          Bucket: RECIPE_CACHE_BUCKET,
+          Key: imageS3Key,
+        }),
+        { expiresIn: 3600 },
+      );
+    } catch {
+      // Fall back to source URL below
+    }
+  }
+
+  return fallbackUrl ?? "";
+}
 
 export async function getRecipeSuggestionsForUser(
   userId: string,
@@ -186,11 +210,12 @@ export async function getRecipeDetails(recipeId: number) {
   if (cached) {
     const steps = (cached.instructions as string[]) ?? [];
     const ingredients = cached.ingredients.map((i) => i.rawName).filter(Boolean);
+    const image = await resolveRecipeImage(cached.image, cached.imageSourceUrl);
 
     return {
       id: cached.id,
       title: cached.title,
-      image: cached.image ?? cached.imageSourceUrl ?? "",
+      image,
       summary: cached.summary ?? "",
       readyInMinutes: cached.readyMinutes ?? 0,
       servings: cached.servings ?? 0,
