@@ -80,6 +80,7 @@ async function batchGetLikedPostIds(
       new BatchGetCommand({
         RequestItems: {
           [COMMUNITY_LIKES_TABLE]: {
+            ConsistentRead: true,
             Keys: postIds.map((postId) => ({ postId, userId })),
           },
         },

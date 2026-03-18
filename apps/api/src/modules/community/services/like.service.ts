@@ -3,20 +3,31 @@ import { dynamo, COMMUNITY_LIKES_TABLE, COMMUNITY_POSTS_TABLE } from "../../../c
 import type { CommunityLike } from "../model/community.types.js";
 
 async function getPostSk(userId: string, postId: string): Promise<string | null> {
-  const result = await dynamo.send(
-    new QueryCommand({
-      TableName: COMMUNITY_POSTS_TABLE,
-      KeyConditionExpression: "userId = :uid",
-      FilterExpression: "postId = :pid",
-      ExpressionAttributeValues: {
-        ":uid": userId,
-        ":pid": postId,
-      },
-      Limit: 10,
-    }),
-  );
-  return (result.Items?.[0]?.sk as string) ?? null;
+  let lastKey: Record<string, unknown> | undefined;
+
+  do {
+    const result = await dynamo.send(
+      new QueryCommand({
+        TableName: COMMUNITY_POSTS_TABLE,
+        KeyConditionExpression: "userId = :uid",
+        FilterExpression: "postId = :pid",
+        ExpressionAttributeValues: {
+          ":uid": userId,
+          ":pid": postId,
+        },
+        ExclusiveStartKey: lastKey,
+      }),
+    );
+
+    const match = result.Items?.[0]?.sk as string | undefined;
+    if (match) return match;
+
+    lastKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
+  } while (lastKey);
+
+  return null;
 }
+
 
 export async function toggleLike(
   userId: string,
