@@ -29,6 +29,17 @@ export async function fetchWeeklyTopics(): Promise<WeeklyTopic[]> {
   return data.topics;
 }
 
+export async function fetchTopicPosts(
+  topicId: string,
+  token?: string,
+): Promise<CommunityPostView[]> {
+  const data = await apiGet<{ posts: CommunityPostView[] }>(
+    `/community/topics/${encodeURIComponent(topicId)}/posts`,
+    token,
+  );
+  return data.posts;
+}
+
 export async function getUploadUrl(
   token: string,
   filename: string,

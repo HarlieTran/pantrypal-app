@@ -1,4 +1,4 @@
-export { getPublicFeed, getPersonalizedFeed, createPost } from "./services/post.service.js";
+export { getPublicFeed, getPersonalizedFeed, getPostsByTopicId, createPost } from "./services/post.service.js";
 export { getOrCreateTodayPinnedTopic, getTopicById, getWeeklyTopics } from "./services/topic.service.js";
 export type {
   CommunityPost,

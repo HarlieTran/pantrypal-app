@@ -5,7 +5,7 @@ import type { RightPanel } from "../../../../app/App";
 import { PantryPage } from "../../../pantry";
 import { RecipesPage } from "../../../recipes";
 import { ProfilePage, EditProfilePage } from "../../../profile";
-import { CommunityFeed, useCommunityFeed, useWeeklyTopics, WeeklyStoryCircles, PostComposer } from "../../../community";
+import { CommunityFeed, useCommunityFeed, useTopicPosts, useWeeklyTopics, WeeklyStoryCircles, PostComposer } from "../../../community";
 import { HomeSidebar } from "./HomeSidebar";
 import { HomeRightPanel } from "./HomeRightPanel";
 import { DailySpecialCard } from "./DailySpecialCard";
@@ -89,9 +89,13 @@ export function HomeHero(props: HomeHeroProps) {
     useCommunityFeed({ token, enabled: true });
   
   const { topics } = useWeeklyTopics();
-  
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
+  const {
+    posts: topicPosts,
+    loading: topicPostsLoading,
+    error: topicPostsError,
+  } = useTopicPosts({ topicId: selectedTopicId, token: token || undefined });
 
   const [showComposer, setShowComposer] = useState(false);
   const [pantryKey, setPantryKey] = useState(0);
@@ -113,9 +117,7 @@ export function HomeHero(props: HomeHeroProps) {
     setPantryKey((k) => k + 1);
   }, []);
   
-  const filteredPosts = selectedTopicId
-  ? posts.filter((p) => p.topicId === selectedTopicId)
-  : posts;
+  const displayedPosts = selectedTopicId ? topicPosts : posts;
 
   const today = new Date();
   const todayIndex = today.getDay();
@@ -194,16 +196,16 @@ export function HomeHero(props: HomeHeroProps) {
                   onSelect={setSelectedTopicId}
                 />
                 <CommunityFeed
-                  posts={filteredPosts}
-                  pinnedTopic={selectedDate ? undefined : pinnedTopic}
-                  nextCursor={nextCursor}
-                  loading={loading}
-                  loadingMore={loadingMore}
-                  error={error}
+                  posts={displayedPosts}
+                  pinnedTopic={selectedTopicId || selectedDate ? undefined : pinnedTopic}
+                  nextCursor={selectedTopicId ? null : nextCursor}
+                  loading={selectedTopicId ? topicPostsLoading : loading}
+                  loadingMore={selectedTopicId ? false : loadingMore}
+                  error={selectedTopicId ? topicPostsError : error}
                   isLoggedIn={isLoggedIn}
                   token={token}
                   currentUserId={isLoggedIn ? sub : undefined}
-                  onLoadMore={loadMore}
+                  onLoadMore={selectedTopicId ? () => {} : loadMore}
                   onLoginNavigate={onLoginNavigate}
                   onCreatePost={isLoggedIn ? () => setShowComposer(true) : undefined}
                 />

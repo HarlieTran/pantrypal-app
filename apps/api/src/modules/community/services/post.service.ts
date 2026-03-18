@@ -1,4 +1,4 @@
-import { QueryCommand, GetCommand, PutCommand, BatchGetCommand } from "@aws-sdk/lib-dynamodb";
+import { QueryCommand, PutCommand, BatchGetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamo, COMMUNITY_POSTS_TABLE, COMMUNITY_LIKES_TABLE, COMMUNITY_COMMENTS_TABLE } from "../../../common/db/dynamo.js";
 import type {
   CommunityPost,
@@ -55,7 +55,7 @@ function toPostView(post: CommunityPost): CommunityPostView {
 
 // ─── Score post for guest feed (recency + popularity) ────────────────────────
 
-function scorePostForGuest(post: CommunityPost): number {
+function scorePostForGuest(post: Pick<CommunityPost, "createdAt" | "likeCount" | "commentCount">): number {
   const now = Date.now();
   const createdAt = new Date(post.createdAt).getTime();
   const ageHours = (now - createdAt) / (1000 * 60 * 60);
@@ -94,6 +94,70 @@ async function batchGetLikedPostIds(
   }
 }
 
+async function hydratePosts(
+  posts: CommunityPost[],
+  userId?: string,
+): Promise<CommunityPostView[]> {
+  const likedPostIds = userId
+    ? await batchGetLikedPostIds(userId, posts.map((p) => p.postId))
+    : new Set<string>();
+
+  return Promise.all(
+    posts.map(async (post) => {
+      const actualCommentCount = await getActualCommentCount(post.postId);
+
+      let finalImageUrl = post.imageUrl;
+      if (!finalImageUrl && post.imageS3Key) {
+        finalImageUrl = await resolveImageUrl(post);
+      }
+
+      const { gsi1pk: _gsi1pk, gsi1sk: _gsi1sk, sk: _sk, ...rest } = post;
+      return {
+        ...rest,
+        imageUrl: finalImageUrl,
+        commentCount: actualCommentCount,
+        isLikedByCurrentUser: likedPostIds.has(post.postId),
+      };
+    }),
+  );
+}
+
+async function fetchPostsByTopic(topicId: string): Promise<CommunityPost[]> {
+  try {
+    const result = await dynamo.send(
+      new QueryCommand({
+        TableName: COMMUNITY_POSTS_TABLE,
+        IndexName: "gsi2-topic-posts",
+        KeyConditionExpression: "topicId = :topicId",
+        ExpressionAttributeValues: { ":topicId": topicId },
+        ScanIndexForward: true,
+        Limit: FEED_PAGE_SIZE,
+      }),
+    );
+
+    return (result.Items ?? []) as CommunityPost[];
+  } catch (error) {
+    const isMissingIndex =
+      error instanceof Error && /index|gsi2/i.test(error.message);
+
+    if (!isMissingIndex) throw error;
+
+    const fallback = await dynamo.send(
+      new ScanCommand({
+        TableName: COMMUNITY_POSTS_TABLE,
+        FilterExpression: "topicId = :topicId",
+        ExpressionAttributeValues: { ":topicId": topicId },
+      }),
+    );
+
+    return ((fallback.Items ?? []) as CommunityPost[]).sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    );
+  }
+}
+
+
+
 // ─── Fetch global feed ────────────────────────────────────────────────────────
 
 async function fetchGlobalFeed(cursor?: string): Promise<{
@@ -124,41 +188,18 @@ async function fetchGlobalFeed(cursor?: string): Promise<{
 
 export async function getPublicFeed(cursor?: string, userId?: string): Promise<CommunityFeedResponse> {
   const { posts, lastEvaluatedKey } = await fetchGlobalFeed(cursor);
-
-  // Batch-check likes if a logged-in userId is provided
-  const likedPostIds = userId
-    ? await batchGetLikedPostIds(userId, posts.map((p) => p.postId))
-    : new Set<string>();
-
-  // Resolve image URLs and score
-  const scored = await Promise.all(
-    posts.map(async (post) => {
-      const actualCommentCount = await getActualCommentCount(post.postId);
-      
-      // Resolve image: prioritize existing imageUrl, otherwise resolve S3 key
-      let finalImageUrl = post.imageUrl;
-      if (!finalImageUrl && post.imageS3Key) {
-        finalImageUrl = await resolveImageUrl(post);
-      }
-      
-      return {
-        post: {
-          ...post,
-          imageUrl: finalImageUrl,
-          commentCount: actualCommentCount,
-          isLikedByCurrentUser: likedPostIds.has(post.postId),
-        },
-        score: scorePostForGuest(post),
-      };
-    }),
-  );
+  const hydratedPosts = await hydratePosts(posts, userId);
+  const scored = hydratedPosts.map((post) => ({
+    post,
+    score: scorePostForGuest(post),
+  }));
 
   // Sort by score
   scored.sort((a, b) => b.score - a.score);
 
   const postViews = scored
     .slice(0, FEED_PAGE_SIZE)
-    .map(({ post }) => toPostView(post));
+    .map(({ post }) => post);
 
   const nextCursor = lastEvaluatedKey
     ? Buffer.from(JSON.stringify(lastEvaluatedKey)).toString("base64")
@@ -183,66 +224,49 @@ export async function getPersonalizedFeed(
   cursor?: string,
 ): Promise<CommunityFeedResponse> {
   const { posts, lastEvaluatedKey } = await fetchGlobalFeed(cursor);
+  const hydratedPosts = await hydratePosts(posts, userId);
+  const scored = hydratedPosts.map((post) => {
+    const tagsSource = Array.isArray(post.tags)
+      ? post.tags
+      : [
+          ...(post.tags?.ingredients ?? []),
+          ...(post.tags?.dietTags ?? []),
+          post.tags?.cuisine ?? "",
+        ];
+    const tags = tagsSource.map((t) => t.toLowerCase());
 
-  // Single batch request instead of one GetItem per post
-  const likedPostIds = await batchGetLikedPostIds(
-    userId,
-    posts.map((p) => p.postId),
-  );
+    const likeOverlap = preferences.likes.filter((l) =>
+      tags.some((t) => t.includes(l.toLowerCase())),
+    ).length;
 
-  const scored = await Promise.all(
-    posts.map(async (post) => {
-      const actualCommentCount = await getActualCommentCount(post.postId);
-      const isLiked = likedPostIds.has(post.postId);
-      
-      // Resolve image: use existing imageUrl or resolve S3 key
-      let finalImageUrl = post.imageUrl;
-      if (!finalImageUrl && post.imageS3Key) {
-        finalImageUrl = await resolveImageUrl(post);
-      }
+    const dislikeOverlap = preferences.dislikes.filter((d) =>
+      tags.some((t) => t.includes(d.toLowerCase())),
+    ).length;
 
-      const tags = [
-        ...(post.tags?.ingredients ?? []),
-        ...(post.tags?.dietTags ?? []),
-        post.tags?.cuisine ?? "",
-      ].map((t) => t.toLowerCase());
+    const allergyOverlap = preferences.allergies.filter((a) =>
+      tags.some((t) => t.includes(a.toLowerCase())),
+    ).length;
 
-      const likeOverlap = preferences.likes.filter((l) =>
-        tags.some((t) => t.includes(l.toLowerCase())),
-      ).length;
+    const now = Date.now();
+    const ageHours =
+      (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
+    const recencyScore = Math.max(0, 1 - ageHours / 48);
 
-      const dislikeOverlap = preferences.dislikes.filter((d) =>
-        tags.some((t) => t.includes(d.toLowerCase())),
-      ).length;
+    const score =
+      recencyScore * 0.3 +
+      likeOverlap * 0.4 -
+      dislikeOverlap * 0.2 -
+      allergyOverlap * 0.5 +
+      post.likeCount * 0.1;
 
-      const allergyOverlap = preferences.allergies.filter((a) =>
-        tags.some((t) => t.includes(a.toLowerCase())),
-      ).length;
-
-      const now = Date.now();
-      const ageHours =
-        (now - new Date(post.createdAt).getTime()) / (1000 * 60 * 60);
-      const recencyScore = Math.max(0, 1 - ageHours / 48);
-
-      const score =
-        recencyScore * 0.3 +
-        likeOverlap * 0.4 -
-        dislikeOverlap * 0.2 -
-        allergyOverlap * 0.5 +
-        post.likeCount * 0.1;
-
-      return {
-        post: { ...post, imageUrl: finalImageUrl, isLikedByCurrentUser: isLiked, commentCount: actualCommentCount },
-        score,
-      };
-    }),
-  );
+    return { post, score };
+  });
 
   scored.sort((a, b) => b.score - a.score);
 
   const postViews = scored
     .slice(0, FEED_PAGE_SIZE)
-    .map(({ post }) => toPostView(post));
+    .map(({ post }) => post);
 
   const nextCursor = lastEvaluatedKey
     ? Buffer.from(JSON.stringify(lastEvaluatedKey)).toString("base64")
@@ -252,6 +276,14 @@ export async function getPersonalizedFeed(
     posts: postViews,
     nextCursor,
   };
+}
+
+export async function getPostsByTopicId(
+  topicId: string,
+  userId?: string,
+): Promise<CommunityPostView[]> {
+  const posts = await fetchPostsByTopic(topicId);
+  return hydratePosts(posts, userId);
 }
 
 // ─── Create a post (authenticated) ────────────────────────────────────

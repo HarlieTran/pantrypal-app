@@ -6,6 +6,7 @@ import {
   deleteComment,
   getComments,
   getOrCreateTodayPinnedTopic,
+  getPostsByTopicId,
   getWeeklyTopics,
   getPersonalizedFeed,
   getPublicFeed,
@@ -48,6 +49,27 @@ export async function handleCommunityRoute(
       return ok({ topics });
     } catch (error) {
       return serverError("Failed to load weekly topics");
+    }
+  }
+
+  if (method === "GET" && path.match(/^\/community\/topics\/[^/]+\/posts$/)) {
+    try {
+      const topicId = path.split("/")[3];
+
+      let userId: string | undefined;
+      if (authHeader?.startsWith("Bearer ")) {
+        try {
+          const claims = await requireAuth({ headers: { authorization: authHeader } });
+          userId = claims.sub;
+        } catch {
+          // auth optional
+        }
+      }
+
+      const posts = await getPostsByTopicId(topicId, userId);
+      return ok({ posts });
+    } catch (error) {
+      return serverError("Failed to load topic posts");
     }
   }
 
