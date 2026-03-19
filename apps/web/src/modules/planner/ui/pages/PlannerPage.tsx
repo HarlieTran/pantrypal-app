@@ -50,7 +50,7 @@ export function PlannerPage({ token, embedded = false }: Props) {
       </header>
 
       {/* Step 1 — Recipe selector */}
-      <div className="profile-section-card">
+      <div className="profile-section-card" style={{ overflow: "visible" }}>
         <div className="profile-section-header">
           <span className="profile-section-icon">🍽️</span>
           <h3 className="profile-section-title">
