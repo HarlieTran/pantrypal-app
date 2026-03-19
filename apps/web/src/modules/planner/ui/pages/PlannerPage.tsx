@@ -57,7 +57,7 @@ export function PlannerPage({ token, embedded = false }: Props) {
             Step 1 — Select recipes for your week
           </h3>
         </div>
-        <div className="profile-section-body">
+        <div className="profile-section-body" style={{ overflow: "visible" }}>
           <RecipeSearchInput
             query={query}
             results={searchResults}
