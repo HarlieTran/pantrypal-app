@@ -4,6 +4,7 @@ import {
   cookRecipeForUser,
   getRecipeDetails,
   getRecipeSuggestionsForUser,
+  toggleSaveRecipe,
 } from "../index.js";
 import { handleError, ok, parseBody, type JsonResponse } from "../../../common/routing/helpers.js";
 
@@ -60,6 +61,18 @@ export async function handleRecipesRoute(
         return ok(result);
       } catch (error) {
         return handleError(error, "Failed to apply recipe to pantry");
+      }
+    });
+  }
+
+  if (method === "POST" && path.match(/^\/recipes\/\d+\/save$/)) {
+    return withAuth(authHeader, async (claims) => {
+      try {
+        const recipeId = Number(path.split("/")[2]);
+        const result = await toggleSaveRecipe(claims.sub, recipeId);
+        return ok(result);
+      } catch (error) {
+        return handleError(error, "Failed to toggle save");
       }
     });
   }

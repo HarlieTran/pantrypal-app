@@ -1,10 +1,11 @@
 type HomeSidebarProps = {
-  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community";
+  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community" | "summary";
   isLoggedIn: boolean;
   onHome: () => void;
   onPantryNavigate: () => void;
   onRecipesNavigate: () => void;
   onProfileNavigate: () => void;
+  onSummaryNavigate: () => void;
   onLogout: () => void;
   onLoginNavigate: () => void;
 };
@@ -16,6 +17,7 @@ export function HomeSidebar({
   onPantryNavigate,
   onRecipesNavigate,
   onProfileNavigate,
+  onSummaryNavigate,
   onLogout,
   onLoginNavigate,
 }: HomeSidebarProps) {
@@ -46,11 +48,14 @@ export function HomeSidebar({
               <span className="ig-left-text">Recipes</span>
             </button>
 
-            <button className="ig-left-link">
+            <button
+              className={`ig-left-link${centerView === "summary" ? " is-active" : ""}`}
+              onClick={onSummaryNavigate}
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                <path d="M0 0h1v15h15v1H0zm14.854 5.854a.5.5 0 0 0-.708-.708L7 12.293 4.854 10.146a.5.5 0 0 0-.708.708l2.5 2.5a.5.5 0 0 0 .708 0z"/>
               </svg>
-              <span className="ig-left-text">Search</span>
+              <span className="ig-left-text">Summary</span>
             </button>
 
             <button className={`ig-left-link${centerView === "profile" || centerView === "edit-profile" ? " is-active" : ""}`} onClick={onProfileNavigate}>

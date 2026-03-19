@@ -1,5 +1,7 @@
 import { deletePantryItem, getPantryItems, updatePantryItem } from "../../pantry/index.js";
 import { getRecipeInformation } from "./spoonacular.service.js";
+import { prisma } from "../../../common/db/prisma.js";
+import { recordCookingHistory } from "./recipe-history.service.js";
 
 type CookOptions = {
   servingsUsed?: number;
@@ -107,6 +109,12 @@ export async function cookRecipeForUser(
   const pantry = await getPantryItems(userId);
   const recipe = await getRecipeInformation(recipeId);
 
+  const recipeExists = await prisma.recipe.findUnique({ 
+    where: { id: recipeId }, 
+    select: { id: true } 
+  });
+  if (!recipeExists) throw new Error("Recipe not found");
+
   const factor =
     recipe.servings && recipe.servings > 0 ? servingsUsed / recipe.servings : servingsUsed;
 
@@ -194,6 +202,11 @@ export async function cookRecipeForUser(
       updatedItems.push({ itemId, name: p.canonicalName || p.rawName, beforeQty, afterQty });
       if (!dryRun) await updatePantryItem(userId, itemId, { quantity: afterQty });
     }
+  }
+
+  // Record cooking history for real cooks only
+  if (!dryRun) {
+    await recordCookingHistory(userId, recipeId);
   }
 
   return {

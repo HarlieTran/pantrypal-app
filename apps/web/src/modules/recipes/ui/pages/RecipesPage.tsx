@@ -5,12 +5,49 @@ import "../../styles/recipes.css";
 import { CookResultModal } from "../components/CookResultModal";
 import { useState } from "react";
 import type { CookRecipeResult } from "../../model/recipes.types";
+import { useRecipeSave } from "../../application/useRecipeSave";
 
 interface Props {
   token: string;
   onBack: () => void;
   onPantryNavigate: () => void;
   embedded?: boolean;
+}
+
+function SaveButton({ recipeId, token }: { recipeId: number; token: string }) {
+  const { saved, saving, handleSave } = useRecipeSave(recipeId, false, token);
+
+  return (
+    <button
+      onClick={() => void handleSave()}
+      disabled={saving}
+      title={saved ? "Unsave recipe" : "Save recipe"}
+      style={{
+        position: "absolute",
+        top: 8,
+        right: 8,
+        background: "rgba(255,255,255,0.85)",
+        border: "none",
+        borderRadius: 6,
+        padding: 4,
+        cursor: saving ? "default" : "pointer",
+        color: saved ? "#dc2743" : "#a8a8a8",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {saved ? (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2 2v13.5a.5.5 0 0 0 .74.439L8 13.069l5.26 2.87A.5.5 0 0 0 14 15.5V2a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2"/>
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v13.5a.5.5 0 0 1-.777.416L8 13.101l-5.223 3.815A.5.5 0 0 1 2 16.5zm2-1a1 1 0 0 0-1 1v12.566l4.723-3.482a.5.5 0 0 1 .554 0L13 14.566V2a1 1 0 0 0-1-1z"/>
+        </svg>
+      )}
+    </button>
+  );
 }
 
 export function RecipesPage({ token, onBack, onPantryNavigate, embedded = false }: Props) {
@@ -80,7 +117,8 @@ export function RecipesPage({ token, onBack, onPantryNavigate, embedded = false 
 
         <div className="ig-recipes-grid">
           {items.map((r) => (
-            <article key={r.id} className="ig-recipe-card">
+            <article key={r.id} className="ig-recipe-card" style={{ position: "relative" }}>
+              <SaveButton recipeId={r.id} token={token} />
               <img src={r.image} alt={r.title} className="ig-recipe-card-image" />
               <div className="ig-recipe-card-body">
                 <div className="ig-recipe-card-body-content">

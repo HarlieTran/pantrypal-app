@@ -137,6 +137,7 @@ export function App() {
         : view === "recipes" ? "recipes" 
         : view === "profile" ? "profile"
         : view === "edit-profile" ? "edit-profile"
+        : view === "summary" ? "summary"
         : "community"
       }
       heroImageSrc={heroImageSrc}
@@ -200,6 +201,7 @@ export function App() {
       onProfileNavigate={() => setView("profile")}
       onEditProfileNavigate={() => setView("edit-profile")}
       onPantryMutated={refreshExpiringItems}
+      onSummaryNavigate={() => setView("summary")}
       homeResetKey={homeResetKey}
     />
   );

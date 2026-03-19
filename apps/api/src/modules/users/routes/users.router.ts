@@ -5,6 +5,7 @@ import {
   getUserBySubject,
   getUserProfile,
   updateUserProfile,
+  getUserSummary,
 } from "../index.js";
 import { handleError, ok, parseBody, type JsonResponse } from "../../../common/routing/helpers.js";
 
@@ -57,6 +58,17 @@ export async function handleUsersRoute(
         return ok({ profile });
       } catch (err) {
         return handleError(err, "Failed to update profile");
+      }
+    });
+  }
+
+  if (method === "GET" && path === "/me/summary") {
+    return withAuth(authHeader, async (claims) => {
+      try {
+        const summary = await getUserSummary(claims.sub);
+        return ok({ summary });
+      } catch (error) {
+        return handleError(error, "Failed to load summary");
       }
     });
   }

@@ -24,5 +24,12 @@ export const getRecipeImages = async (count = 6) =>
   }>(`/onboarding/recipe-images?count=${count}`);
 
 export const submitRecipeSelections = async (token: string, payload: { selectedImageIds: string[]; rejectedImageIds: string[] }) =>
-  apiPost('/me/onboarding/recipe-selections', payload, token);
+  apiPost<{
+    preferenceProfile?: {
+      likes?: string[];
+      dislikes?: string[];
+      dietSignals?: string[];
+      confidence?: { likes: number; dislikes: number; overall: number };
+    };
+  }>('/me/onboarding/recipe-selections', payload, token);
 

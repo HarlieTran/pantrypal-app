@@ -20,3 +20,10 @@ export async function cookRecipe(
 ): Promise<CookRecipeResult> {
   return apiPost(`/recipes/${recipeId}/cook`, options, token);
 }
+
+export async function toggleSaveRecipe(
+  token: string,
+  recipeId: number,
+): Promise<{ saved: boolean }> {
+  return apiPost(`/recipes/${recipeId}/save`, {}, token);
+}

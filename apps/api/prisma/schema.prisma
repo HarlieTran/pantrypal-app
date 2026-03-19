@@ -19,6 +19,8 @@ model UserProfile {
   onboardingCompleted Boolean      @default(false)
   answers             UserAnswer[]
   recipeSelections    UserRecipeSelection[]
+  savedRecipes        SavedRecipe[]
+  cookingHistory      CookingHistory[]
   preferenceProfile   UserPreferenceProfile?
   pantryItems         PantryItem[]
   pantryMeta          PantryMeta?
@@ -233,6 +235,8 @@ model Recipe {
   readyMinutes  Int?
   servings      Int?
   sourceUrl     String?              // original recipe URL
+  savedBy       SavedRecipe[]
+  cookedBy      CookingHistory[]
   summary       String?              // HTML summary from Spoonacular
   instructions  Json?                // array of step strings
   rawData       Json                 // full Spoonacular response, for safety
@@ -262,4 +266,31 @@ model RecipeIngredient {
 model SeedOffset {
   key    String @id
   offset Int
+}
+
+model SavedRecipe {
+  id        String   @id @default(uuid())
+  userId    String
+  recipeId  Int
+  createdAt DateTime @default(now())
+
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recipeId])
+  @@index([userId])
+  @@map("saved_recipes")
+}
+
+model CookingHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  recipeId  Int
+  createdAt DateTime @default(now())
+
+  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe      @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("cooking_history")
 }

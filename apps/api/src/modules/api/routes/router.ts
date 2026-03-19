@@ -21,7 +21,7 @@ export async function dispatchApiRoute(
       return { statusCode: 200, body: { ok: true, service: "api" } };
     }
 
-    const usersRoutePaths = new Set(["/me", "/me/bootstrap", "/me/profile"]);
+    const usersRoutePaths = new Set(["/me", "/me/bootstrap", "/me/profile", "/me/summary"]);
     if (usersRoutePaths.has(pathname)) {
       const response = await handleUsersRoute(method, pathname, authHeader, rawBody);
       if (response) return response;
