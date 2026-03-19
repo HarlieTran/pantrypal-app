@@ -3,7 +3,7 @@ import { getMe, submitRecipeSelections } from "../../modules/onboarding";
 import type { PreferenceProfile } from "../../modules/home";
 import type { RightPanel } from "../App";
 
-type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile" | "edit-profile" | "community" | "summary";
+type View = "home" | "onboarding" | "onboarding-recipe-picks" | "pantry" | "recipes" | "profile" | "edit-profile" | "community" | "summary" | "planner";
 
 export function useAppNavigation(sessionStatus: string, token: string) {
   const [view, setView] = useState<View>("community");

@@ -10,9 +10,10 @@ import { HomeSidebar } from "./HomeSidebar";
 import { HomeRightPanel } from "./HomeRightPanel";
 import { DailySpecialCard } from "./DailySpecialCard";
 import { SummaryPage } from "../../../profile";
+import { PlannerPage } from "../../../planner";
 
 type HomeHeroProps = {
-  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community" | "summary";
+  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community" | "summary" | "planner";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;
@@ -58,6 +59,7 @@ type HomeHeroProps = {
   onEditProfileNavigate: () => void;
   onPantryMutated: () => void;
   onSummaryNavigate: () => void;
+  onPlannerNavigate: () => void;
   homeResetKey: number;
 };
 
@@ -85,6 +87,7 @@ export function HomeHero(props: HomeHeroProps) {
     onEditProfileNavigate,
     onRightPanelChange,
     onSummaryNavigate,
+    onPlannerNavigate,
     homeResetKey,
   } = props;
 
@@ -153,6 +156,7 @@ export function HomeHero(props: HomeHeroProps) {
         onRecipesNavigate={onRecipesNavigate}
         onProfileNavigate={onProfileNavigate}
         onSummaryNavigate={onSummaryNavigate}
+        onPlannerNavigate={onPlannerNavigate}
         onLogout={onLogout}
         onLoginNavigate={onLoginNavigate}
       />
@@ -198,6 +202,8 @@ export function HomeHero(props: HomeHeroProps) {
                 onRecipeClick={() => onRecipesNavigate()}
                 embedded
               />
+            ) : centerView === "planner" ? (
+              <PlannerPage token={token} embedded />
             ) : centerView === "community" ? (
               <>
                 <WeeklyStoryCircles

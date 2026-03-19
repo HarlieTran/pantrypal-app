@@ -138,6 +138,7 @@ export function App() {
         : view === "profile" ? "profile"
         : view === "edit-profile" ? "edit-profile"
         : view === "summary" ? "summary"
+        : view === "planner" ? "planner"
         : "community"
       }
       heroImageSrc={heroImageSrc}
@@ -202,6 +203,7 @@ export function App() {
       onEditProfileNavigate={() => setView("edit-profile")}
       onPantryMutated={refreshExpiringItems}
       onSummaryNavigate={() => setView("summary")}
+      onPlannerNavigate={() => setView("planner")}
       homeResetKey={homeResetKey}
     />
   );

@@ -21,7 +21,22 @@ export async function dispatchApiRoute(
       return { statusCode: 200, body: { ok: true, service: "api" } };
     }
 
-    const usersRoutePaths = new Set(["/me", "/me/bootstrap", "/me/profile", "/me/summary"]);
+    const usersRoutePaths = new Set([
+      "/me", 
+      "/me/bootstrap", 
+      "/me/profile", 
+      "/me/summary"
+    ]);
+
+    if (
+      pathname === "/me/planner/grocery-list" ||
+      pathname.startsWith("/recipes")
+    ) {
+      const response = await handleRecipesRoute(method, path, authHeader, rawBody);
+      if (response) return response;
+    }
+
+    
     if (usersRoutePaths.has(pathname)) {
       const response = await handleUsersRoute(method, pathname, authHeader, rawBody);
       if (response) return response;
@@ -41,10 +56,10 @@ export async function dispatchApiRoute(
       if (response) return response;
     }
 
-    if (pathname.startsWith("/recipes")) {
-      const response = await handleRecipesRoute(method, pathname, authHeader, rawBody);
-      if (response) return response;
-    }
+    // if (pathname.startsWith("/recipes") || pathname === "/me/planner/grocery-list") {
+    //   const response = await handleRecipesRoute(method, pathname, authHeader, rawBody);
+    //   if (response) return response;
+    // }
 
     if (pathname.startsWith("/community")) {
       const response = await handleCommunityRoute(method, path, authHeader, rawBody);

@@ -182,6 +182,7 @@ Resources:
                 Effect: Allow
                 Action:
                   - s3:GetObject
+                  - s3:PutObject
                 Resource: arn:aws:s3:::pantrypal-recipe-cache/*
               - Sid: S3CommunityPosts
                 Effect: Allow

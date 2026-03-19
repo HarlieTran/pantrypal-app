@@ -5,7 +5,7 @@ import type { RightPanel } from "../../../../app/App";
 import "../../styles/home.css";
 
 type HomePageProps = {
-  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community" | "summary";
+  centerView: "home" | "pantry" | "recipes" | "profile" | "edit-profile" | "community" | "summary" | "planner";
   heroImageSrc: string;
   special?: HomeSpecial;
   homeLoading: boolean;
@@ -52,6 +52,7 @@ type HomePageProps = {
   onEditProfileNavigate: () => void;
   onPantryMutated: () => void;
   onSummaryNavigate: () => void;
+  onPlannerNavigate: () => void;
   homeResetKey: number;
 };
 
