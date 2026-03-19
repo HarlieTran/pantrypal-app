@@ -1,5 +1,28 @@
 import { prisma } from "../../../common/db/prisma.js";
 import { getUserProfileIdBySubject } from "../../users/index.js";
+import { s3 } from "../../../common/storage/s3.js";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+const RECIPE_CACHE_BUCKET = process.env.S3_BUCKET_RECIPE_CACHE || "";
+
+async function resolveRecipeImage(
+  imageS3Key: string | null | undefined,
+  fallbackUrl: string | null | undefined,
+): Promise<string | null> {
+  if (imageS3Key && RECIPE_CACHE_BUCKET) {
+    try {
+      return await getSignedUrl(
+        s3,
+        new GetObjectCommand({ Bucket: RECIPE_CACHE_BUCKET, Key: imageS3Key }),
+        { expiresIn: 3600 },
+      );
+    } catch {
+      // fall through
+    }
+  }
+  return fallbackUrl ?? null;
+}
 
 export async function recordCookingHistory(
   userId: string,
@@ -76,12 +99,14 @@ export async function getCookingHistory(userId: string): Promise<{
     totalCooked,
     thisMonthCooked,
     currentStreak,
-    recentHistory: recentHistory.map((h) => ({
-      id: h.id,
-      recipeId: h.recipeId,
-      recipeTitle: h.recipe.title,
-      recipeImage: h.recipe.image ?? h.recipe.imageSourceUrl ?? null,
-      cookedAt: h.createdAt,
+    recentHistory: await Promise.all(
+  recentHistory.map(async (h) => ({
+    id: h.id,
+    recipeId: h.recipeId,
+    recipeTitle: h.recipe.title,
+    recipeImage: await resolveRecipeImage(h.recipe.image, h.recipe.imageSourceUrl),
+    cookedAt: h.createdAt,
     })),
+    ),
   };
 }

@@ -2,6 +2,29 @@ import { prisma } from "../../../common/db/prisma.js";
 import { getUserProfileIdBySubject } from "./profile.service.js";
 import { getPantryItems } from "../../pantry/index.js";
 import { getCookingHistory } from "../../recipes/index.js";
+import { s3 } from "../../../common/storage/s3.js";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+const RECIPE_CACHE_BUCKET = process.env.S3_BUCKET_RECIPE_CACHE || "";
+
+async function resolveRecipeImage(
+  imageS3Key: string | null | undefined,
+  fallbackUrl: string | null | undefined,
+): Promise<string | null> {
+  if (imageS3Key && RECIPE_CACHE_BUCKET) {
+    try {
+      return await getSignedUrl(
+        s3,
+        new GetObjectCommand({ Bucket: RECIPE_CACHE_BUCKET, Key: imageS3Key }),
+        { expiresIn: 3600 },
+      );
+    } catch {
+      // fall through to fallback
+    }
+  }
+  return fallbackUrl ?? null;
+}
 
 export async function getUserSummary(userId: string) {
   const profileId = await getUserProfileIdBySubject(userId);
@@ -48,14 +71,16 @@ export async function getUserSummary(userId: string) {
   // Saved recipes
   const savedRecipes = {
     total: savedRecipesData.length,
-    recipes: savedRecipesData.map((s) => ({
-      recipeId: s.recipeId,
-      title: s.recipe.title,
-      image: s.recipe.image ?? s.recipe.imageSourceUrl ?? null,
-      readyMinutes: s.recipe.readyMinutes,
-      cuisine: s.recipe.cuisine,
-      savedAt: s.createdAt,
-    })),
+    recipes: await Promise.all(
+      savedRecipesData.map(async (s) => ({
+        recipeId: s.recipeId,
+        title: s.recipe.title,
+        image: await resolveRecipeImage(s.recipe.image, s.recipe.imageSourceUrl),
+        readyMinutes: s.recipe.readyMinutes,
+        cuisine: s.recipe.cuisine,
+        savedAt: s.createdAt,
+      })),
+    ),
   };
 
   return {
