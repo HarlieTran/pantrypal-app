@@ -125,16 +125,23 @@ async function uploadImageToS3(
   imageUrl: string,
   recipeId: number,
 ): Promise<string | null> {
-  if (!RECIPE_IMAGES_BUCKET) return null;
+  if (!RECIPE_IMAGES_BUCKET) {
+    console.warn("[recipe-generate] S3_BUCKET_RECIPE_CACHE not set");
+    return null;
+  }
 
   try {
     const res = await fetch(imageUrl);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn("[recipe-generate] Failed to fetch image:", res.status);
+      return null;
+    }
 
     const contentType = res.headers.get("content-type") || "image/jpeg";
     const bytes = Buffer.from(await res.arrayBuffer());
-    const ext = imageUrl.split(".").pop()?.split("?")[0] ?? "jpg";
-    const key = `recipe-images/${recipeId}.${ext}`;
+    
+    // Always jpg for Unsplash — their URLs use query params not file extensions
+    const key = `recipe-images/${recipeId}.jpg`;
 
     await s3.send(
       new PutObjectCommand({
@@ -145,8 +152,10 @@ async function uploadImageToS3(
       }),
     );
 
+    console.log("[recipe-generate] S3 upload success:", key);
     return key;
-  } catch {
+  } catch (err) {
+    console.error("[recipe-generate] S3 upload failed:", err);
     return null;
   }
 }
@@ -171,7 +180,16 @@ export async function generateAndSaveRecipe(
   // Step 1 — check DB first before calling Bedrock
   const existing = await prisma.recipe.findFirst({
     where: { title: { equals: name.trim(), mode: "insensitive" } },
-    select: { id: true, title: true, image: true, imageSourceUrl: true, cuisine: true, dietTags: true, readyMinutes: true, servings: true },
+    select: {
+      id: true,
+      title: true,
+      image: true,
+      imageSourceUrl: true,
+      cuisine: true,
+      dietTags: true,
+      readyMinutes: true,
+      servings: true,
+    },
   });
 
   if (existing) {
@@ -181,11 +199,10 @@ export async function generateAndSaveRecipe(
   // Step 2 — generate with Bedrock
   const generated = await generateRecipeWithBedrock(name, targetServings);
 
-  // Step 3 — fetch image from Unsplash
+  // Step 3 — fetch image URL from Unsplash
   const unsplashUrl = await fetchRecipeImageUrl(generated.title, generated.cuisine);
 
-  // Step 4 — we need a temporary ID to upload image
-  // Create the recipe first without image, then update
+  // Step 4 — create recipe in DB first (without image)
   const saved = await prisma.recipe.create({
     data: {
       id: generateAiRecipeId(),
@@ -196,12 +213,13 @@ export async function generateAndSaveRecipe(
       servings: generated.servings,
       summary: generated.summary,
       instructions: generated.instructions,
-      imageSourceUrl: unsplashUrl,
+      imageSourceUrl: unsplashUrl,   // store original Unsplash URL
+      image: null,                   // will be updated after S3 upload
       rawData: generated as object,
     },
   });
 
-  // Step 5 — upload image to S3
+  // Step 5 — upload image to S3 now that we have the recipe ID
   let imageS3Key: string | null = null;
   if (unsplashUrl) {
     imageS3Key = await uploadImageToS3(unsplashUrl, saved.id);
