@@ -74,7 +74,7 @@ export function ProfilePage({
   const { pref, memberSince, allergyAnswers, dietAnswers, dislikedText, dietNotesText, allergiesOther } = buildProfileViewModel(profile);
 
   const content = (
-    <div style={{ display: "grid", gap: "16px" }}>
+    <div className="profile-page-grid">
       <div className="profile-header">
         <div className="profile-avatar-large">{avatarLabel}</div>
         <div className="profile-info">
@@ -148,7 +148,7 @@ export function ProfilePage({
             {dietAnswers.length === 0 && allergyAnswers.length === 0 && !dislikedText && !dietNotesText && !allergiesOther ? (
               <EmptyState message="No dietary preferences saved yet." cta="Add preferences →" onCta={onStartOnboarding} />
             ) : (
-              <div style={{ display: "grid", gap: "14px" }}>
+              <div className="profile-details-grid">
                 {dietAnswers.length > 0 && (
                   <div className="profile-tags-subsection">
                     <p className="profile-diet-label">Diet Type</p>
@@ -201,7 +201,7 @@ export function ProfilePage({
                 <p className="profile-cta-text-title">✦ Complete your taste profile</p>
                 <p className="profile-cta-text-subtitle">Answer a few questions to unlock AI-powered recipe suggestions.</p>
               </div>
-              <button className="btn-primary" onClick={onStartOnboarding} style={{ fontSize: "13px", flexShrink: 0 }}>
+              <button className="btn-primary profile-cta-button" onClick={onStartOnboarding}>
                 Get started →
               </button>
             </div>

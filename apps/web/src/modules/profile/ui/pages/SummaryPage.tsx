@@ -15,7 +15,7 @@ export function SummaryPage({ token, onRecipeClick, embedded = false }: Props) {
   const { summary, loading, error } = useSummary(token);
 
   const content = (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className="profile-page-grid">
       <header className="ig-toolbar">
         <div className="ig-toolbar-left">
           <div>

@@ -1,13 +1,10 @@
 import type { CookingActivitySummary } from "../../../infra/summary.api";
 
-function StatCard({ value, label, color }: { value: number; label: string; color?: string }) {
+function StatCard({ value, label, tone }: { value: number; label: string; tone?: "accent" }) {
   return (
-    <div style={{
-      flex: 1, textAlign: "center", padding: "16px 8px",
-      borderRadius: 10, background: "#fafafa", border: "1px solid #efefef",
-    }}>
-      <p style={{ margin: 0, fontSize: 28, fontWeight: 700, color: color ?? "#262626" }}>{value}</p>
-      <p style={{ margin: "4px 0 0", fontSize: 12, color: "#737373" }}>{label}</p>
+    <div className="profile-summary-stat-card">
+      <p className={`profile-summary-stat-value${tone ? ` is-${tone}` : ""}`}>{value}</p>
+      <p className="profile-summary-stat-label">{label}</p>
     </div>
   );
 }
@@ -20,52 +17,44 @@ type Props = {
 export function CookingActivityCard({ cookingActivity, onRecipeClick }: Props) {
   return (
     <>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      <div className="profile-summary-stat-grid">
         <StatCard value={cookingActivity.totalCooked} label="All time" />
         <StatCard value={cookingActivity.thisMonthCooked} label="This month" />
         <StatCard
           value={cookingActivity.currentStreak}
           label="Day streak"
-          color={cookingActivity.currentStreak > 0 ? "#dc2743" : undefined}
+          tone={cookingActivity.currentStreak > 0 ? "accent" : undefined}
         />
       </div>
 
       {cookingActivity.recentHistory.length === 0 ? (
-        <p style={{ fontSize: 13, color: "#737373", textAlign: "center", padding: "12px 0" }}>
+        <p className="profile-summary-empty">
           No cooking history yet. Cook a recipe to get started!
         </p>
       ) : (
         <>
-          <p style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: 1,
-            textTransform: "uppercase", color: "#737373", marginBottom: 10,
-          }}>
+          <p className="profile-summary-section-label">
             Recent cooks
           </p>
-          <div style={{ display: "grid", gap: 8 }}>
+          <div className="profile-summary-list">
             {cookingActivity.recentHistory.map((h) => (
               <div
                 key={h.id}
                 onClick={() => onRecipeClick?.(h.recipeId)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10,
-                  padding: "8px 10px", borderRadius: 8,
-                  background: "#fafafa", border: "1px solid #efefef",
-                  cursor: onRecipeClick ? "pointer" : "default",
-                }}
+                className={`profile-summary-item${onRecipeClick ? " is-clickable" : ""}`}
               >
                 {h.recipeImage && (
                   <img
                     src={h.recipeImage}
                     alt={h.recipeTitle}
-                    style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
+                    className="profile-summary-thumb"
                   />
                 )}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#262626" }}>
+                <div className="profile-summary-item-meta">
+                  <p className="profile-summary-item-title">
                     {h.recipeTitle}
                   </p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#737373" }}>
+                  <p className="profile-summary-item-copy">
                     {new Date(h.cookedAt).toLocaleDateString("en-US", {
                       month: "short", day: "numeric", year: "numeric",
                     })}

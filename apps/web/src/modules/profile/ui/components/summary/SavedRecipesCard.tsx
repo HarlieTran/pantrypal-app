@@ -9,7 +9,7 @@ type Props = {
 export function SavedRecipesCard({ savedRecipes, onRecipeClick }: Props) {
   if (savedRecipes.total === 0) {
     return (
-      <p style={{ fontSize: 13, color: "#737373", textAlign: "center", padding: "12px 0" }}>
+      <p className="profile-saved-empty">
         No saved recipes yet. Bookmark a recipe to see it here!
       </p>
     );
@@ -17,16 +17,15 @@ export function SavedRecipesCard({ savedRecipes, onRecipeClick }: Props) {
 
   return (
     <>
-      <p style={{ fontSize: 13, color: "#737373", marginBottom: 12 }}>
+      <p className="profile-saved-copy">
         {savedRecipes.total} saved recipe{savedRecipes.total !== 1 ? "s" : ""}
       </p>
       <div className="ig-recipes-grid">
         {savedRecipes.recipes.map((r) => (
           <article
             key={r.recipeId}
-            className="ig-recipe-card"
+            className={`ig-recipe-card profile-saved-card${onRecipeClick ? " is-clickable" : ""}`}
             onClick={() => onRecipeClick?.(r.recipeId)}
-            style={{ cursor: onRecipeClick ? "pointer" : "default" }}
           >
             {r.image && (
               <img src={r.image} alt={r.title} className="ig-recipe-card-image" />
@@ -37,7 +36,7 @@ export function SavedRecipesCard({ savedRecipes, onRecipeClick }: Props) {
                 {r.readyMinutes && <p>{r.readyMinutes} min</p>}
                 {r.cuisine.length > 0 && <p>{r.cuisine.join(", ")}</p>}
               </div>
-              <p style={{ fontSize: 11, color: "#a8a8a8", marginTop: 6 }}>
+              <p className="profile-saved-meta">
                 Saved {new Date(r.savedAt).toLocaleDateString("en-US", {
                   month: "short", day: "numeric",
                 })}

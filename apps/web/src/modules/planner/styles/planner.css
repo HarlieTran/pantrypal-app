@@ -77,7 +77,8 @@
 
 .ig-planner-search-input {
   width: 100%;
-  box-sizing: border-box;
+  border-bottom: linear-gradient(135deg, #701d75, #cc0325);;
+  /* box-sizing: border-box; */
 }
 
 .ig-planner-search-note {
@@ -99,7 +100,7 @@
   right: 0;
   background: #fff;
   border: 1px solid #dbdbdb;
-  border-radius: 8px;
+  border-radius: 5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 100;
   max-height: 360px;
@@ -163,7 +164,7 @@
 .ig-planner-search-thumb {
   width: 36px;
   height: 36px;
-  border-radius: 6px;
+  border-radius: 5px;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -209,7 +210,7 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 5px;
   border: 1px solid #efefef;
   background: #fafafa;
 }
@@ -217,7 +218,7 @@
 .ig-planner-recipe-thumb {
   width: 44px;
   height: 44px;
-  border-radius: 6px;
+  border-radius: 5px;
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -262,7 +263,7 @@
 .ig-planner-servings-button {
   width: 24px;
   height: 24px;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid #dbdbdb;
   background: #fff;
   cursor: pointer;
@@ -296,7 +297,7 @@
 
 .ig-planner-warning {
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 5px;
 }
 
 .ig-planner-warning-allergen {
@@ -356,7 +357,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 5px;
 }
 
 .ig-planner-grocery-item {

@@ -128,7 +128,7 @@ export function EditProfilePage({ token, displayName, onBack }: EditProfilePageP
               />
             </div>
 
-            {saveError && <div className="ig-error-note" style={{ marginBottom: "10px" }}>{saveError}</div>}
+            {saveError && <div className="ig-error-note profile-error-spacing">{saveError}</div>}
             <button onClick={onSaveAndBack} disabled={saving} className={`btn-primary ${saved ? "is-saved" : ""}`}>
               {saved ? "Saved" : saving ? "Saving..." : "Save Changes"}
             </button>
