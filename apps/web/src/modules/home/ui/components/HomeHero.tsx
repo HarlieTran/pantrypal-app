@@ -200,6 +200,9 @@ export function HomeHero(props: HomeHeroProps) {
               <SummaryPage
                 token={token}
                 onRecipeClick={() => onRecipesNavigate()}
+                onRecipesNavigate={onRecipesNavigate}
+                onPantryNavigate={onPantryNavigate}
+                onPlannerNavigate={onPlannerNavigate}
                 embedded
               />
             ) : centerView === "planner" ? (

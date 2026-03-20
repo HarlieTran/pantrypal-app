@@ -34,10 +34,44 @@ export type SavedRecipesSummary = {
   }[];
 };
 
+export type SummarySnapshot = {
+  totalPantryItems: number;
+  expiringSoonCount: number;
+  expiredCount: number;
+  savedRecipesCount: number;
+  totalCooked: number;
+  thisMonthCooked: number;
+  currentStreak: number;
+};
+
+export type SummaryPrediction = {
+  type: "expiry_risk" | "cooking_pattern" | "planning_opportunity" | "shopping_pattern";
+  title: string;
+  detail: string;
+  confidence: "high" | "medium" | "low";
+};
+
+export type SummarySuggestion = {
+  type: "cook_now" | "plan_meals" | "use_saved_recipe" | "review_pantry";
+  title: string;
+  detail: string;
+  priority: "high" | "medium" | "low";
+  cta: "find_recipes" | "open_planner" | "view_pantry" | "view_saved_recipes";
+};
+
+export type SummaryIntelligence = {
+  headline: string;
+  narrative: string;
+  predictions: SummaryPrediction[];
+  suggestions: SummarySuggestion[];
+};
+
 export type UserSummary = {
+  snapshot: SummarySnapshot;
   pantryHealth: PantryHealthSummary;
   cookingActivity: CookingActivitySummary;
   savedRecipes: SavedRecipesSummary;
+  intelligence: SummaryIntelligence;
 };
 
 export async function fetchUserSummary(token: string): Promise<UserSummary> {
