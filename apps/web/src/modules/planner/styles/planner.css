@@ -412,11 +412,11 @@
 .ig-planner-grocery-remove {
   width: 24px;
   height: 24px;
-  border-radius: 999px;
-  border: 1px solid #dbdbdb;
-  background: #fff;
+  /* border-radius: 999px;
+  border: 1px solid #dbdbdb; */
+  /* background: #fff; */
   color: #8a8a8a;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
 }
