@@ -158,6 +158,17 @@ export function useMealPlanner(token: string) {
     }
   }, [plannerRecipes, token]);
 
+  const removeGroceryItem = useCallback((itemIndex: number) => {
+    setGroceryPlan((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        toBuy: prev.toBuy.filter((_, index) => index !== itemIndex),
+      };
+    });
+  }, []);
+
   // ── Reset ─────────────────────────────────────────────────────────────────
 
   const reset = useCallback(() => {
@@ -191,6 +202,7 @@ export function useMealPlanner(token: string) {
     planLoading,
     planError,
     generatePlan,
+    removeGroceryItem,
 
     // Reset
     reset,

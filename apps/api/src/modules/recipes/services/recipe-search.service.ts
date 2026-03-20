@@ -1,5 +1,6 @@
 import { prisma } from "../../../common/db/prisma.js";
 import { getUserProfileIdBySubject } from "../../users/index.js";
+import { getPantryItems } from "../../pantry/index.js";
 import { s3 } from "../../../common/storage/s3.js";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -81,10 +82,7 @@ export async function searchRecipes(
 
   // Load current pantry items for pantry-ready calculation
   const pantryItems = profileId
-    ? await prisma.pantryItem.findMany({
-        where: { userProfileId: profileId },
-        select: { canonicalName: true },
-      })
+    ? await getPantryItems(userId)
     : [];
 
   const pantrySet = new Set(

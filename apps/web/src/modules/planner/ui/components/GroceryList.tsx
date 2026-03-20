@@ -1,8 +1,11 @@
 import type { GroceryPlan } from "../../model/planner.types";
 
-type Props = { plan: GroceryPlan };
+type Props = {
+  plan: GroceryPlan;
+  onRemoveItem: (itemIndex: number) => void;
+};
 
-export function GroceryList({ plan }: Props) {
+export function GroceryList({ plan, onRemoveItem }: Props) {
   return (
     <div style={{ display: "grid", gap: 16 }}>
 
@@ -80,9 +83,29 @@ export function GroceryList({ plan }: Props) {
                     for {item.neededFor.join(", ")}
                   </p>
                 </div>
-                <span style={{ fontSize: 13, color: "#737373", fontWeight: 600 }}>
-                  {item.quantity} {item.unit}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 13, color: "#737373", fontWeight: 600 }}>
+                    {item.quantity} {item.unit}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveItem(i)}
+                    aria-label={`Remove ${item.name} from grocery list`}
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: 999,
+                      border: "1px solid #dbdbdb",
+                      background: "#fff",
+                      color: "#8a8a8a",
+                      cursor: "pointer",
+                      fontSize: 14,
+                      lineHeight: 1,
+                    }}
+                  >
+                    x
+                  </button>
+                </div>
               </div>
             ))}
           </div>

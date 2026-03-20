@@ -26,6 +26,7 @@ export function PlannerPage({ token, embedded = false }: Props) {
     planLoading,
     planError,
     generatePlan,
+    removeGroceryItem,
     reset,
   } = useMealPlanner(token);
 
@@ -141,7 +142,10 @@ export function PlannerPage({ token, embedded = false }: Props) {
                     Refresh
                   </button>
                 </div>
-                <GroceryList plan={groceryPlan} />
+                <GroceryList
+                  plan={groceryPlan}
+                  onRemoveItem={removeGroceryItem}
+                />
               </>
             )}
           </div>

@@ -244,10 +244,26 @@ export async function generateAndSaveRecipe(
     });
   }
 
+  // Resolve the image URL for the response
+  let resolvedImageUrl: string | null = unsplashUrl;
+  if (imageS3Key && RECIPE_IMAGES_BUCKET) {
+    try {
+      const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+      const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+      resolvedImageUrl = await getSignedUrl(
+        s3,
+        new GetObjectCommand({ Bucket: RECIPE_IMAGES_BUCKET, Key: imageS3Key }),
+        { expiresIn: 3600 },
+      );
+    } catch {
+      resolvedImageUrl = unsplashUrl; // fallback to Unsplash URL
+    }
+  }
+
   return {
     id: saved.id,
     title: saved.title,
-    image: imageS3Key,
+    image: resolvedImageUrl,     
     imageSourceUrl: unsplashUrl,
     cuisine: saved.cuisine,
     dietTags: saved.dietTags,
@@ -255,4 +271,5 @@ export async function generateAndSaveRecipe(
     servings: saved.servings,
     isNew: true,
   };
+
 }

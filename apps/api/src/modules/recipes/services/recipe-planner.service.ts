@@ -1,5 +1,6 @@
 import { prisma } from "../../../common/db/prisma.js";
 import { getUserProfileIdBySubject, getUserFeedPreferencesBySubject } from "../../users/index.js";
+import { getPantryItems } from "../../pantry/index.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,10 +104,7 @@ export async function generateGroceryPlan(
   );
 
   // ── Load pantry items ──────────────────────────────────────────────────────
-  const pantryItems = await prisma.pantryItem.findMany({
-    where: { userProfileId: profileId },
-    select: { canonicalName: true, quantity: true, unit: true },
-  });
+  const pantryItems = await getPantryItems(userId);
 
   const pantryMap = new Map(
     pantryItems.map((i) => [
@@ -171,8 +169,11 @@ export async function generateGroceryPlan(
   const allergenWarnings: AllergenWarning[] = [];
   const dislikeWarnings: DislikeWarning[] = [];
 
+  console.log("[planner] pantry items:", [...pantryMap.keys()]);
+  console.log("[planner] recipe ingredients:", [...aggregated.keys()].map(k => k.split("::")[0]));
+
   for (const [, ing] of aggregated) {
-    const inPantry = pantryMap.get(ing.canonicalName);
+    const inPantry = pantryMap.get(normalize(ing.canonicalName));
 
     // Check allergen
     const matchedAllergen = [...allergySet].find((a) =>
@@ -184,7 +185,7 @@ export async function generateGroceryPlan(
         foundIn: ing.neededFor,
         allergen: matchedAllergen,
       });
-      continue; // still add to toBuy below — user should decide
+      
     }
 
     // Check dislike
@@ -202,14 +203,14 @@ export async function generateGroceryPlan(
 
     if (inPantry) {
       alreadyHave.push({
-        name: ing.rawName,
+        name: ing.canonicalName,
         pantryQuantity: inPantry.quantity,
         unit: inPantry.unit,
         neededFor: ing.neededFor,
       });
     } else {
       toBuy.push({
-        name: ing.rawName,
+        name: ing.canonicalName,
         quantity: Math.ceil(ing.totalAmount * 10) / 10, // round to 1 decimal
         unit: ing.unit,
         neededFor: ing.neededFor,
@@ -219,6 +220,8 @@ export async function generateGroceryPlan(
 
   // Sort toBuy — items needed for more recipes come first
   toBuy.sort((a, b) => b.neededFor.length - a.neededFor.length);
+
+  
 
   return {
     toBuy,
