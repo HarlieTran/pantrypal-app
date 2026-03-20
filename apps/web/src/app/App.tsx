@@ -6,8 +6,9 @@ import { HomePage } from "../modules/home";
 import { useIdentity } from "./application/useIdentity";
 import { useHomeAndPantryPreview } from "./application/useHomeAndPantryPreview";
 import { useProfilePageData } from "../modules/profile/application/useProfilePageData";
+import { invalidateSummaryCache, prefetchSummary } from "../modules/profile/application/useSummary";
 import "./styles/app.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type RightPanel = "guest" | "login" | "signup" | "success" | "user" | "onboarding-q" | "onboarding-picks";
 
@@ -74,10 +75,26 @@ export function App() {
       session.status === "bootstrapping",
     );
 
+  useEffect(() => {
+    if (!isLoggedIn || !token) {
+      invalidateSummaryCache();
+      return;
+    }
+
+    void prefetchSummary(token);
+  }, [isLoggedIn, token]);
+
+  const refreshSummaryCache = async () => {
+    if (!token) return;
+    invalidateSummaryCache(token);
+    await prefetchSummary(token);
+  };
+
   const onLogout = () => {
     logout();
     resetOnLogout();
     resetAuthForm();
+    invalidateSummaryCache();
   };
 
   const onLogin = async () => {
@@ -201,7 +218,10 @@ export function App() {
       onRequestMorePicks={() => undefined}
       onProfileNavigate={() => setView("profile")}
       onEditProfileNavigate={() => setView("edit-profile")}
-      onPantryMutated={refreshExpiringItems}
+      onPantryMutated={() => {
+        void refreshExpiringItems();
+        void refreshSummaryCache();
+      }}
       onSummaryNavigate={() => setView("summary")}
       onPlannerNavigate={() => setView("planner")}
       homeResetKey={homeResetKey}
