@@ -31,7 +31,7 @@ export function PlannerPage({ token, embedded = false }: Props) {
   } = useMealPlanner(token);
 
   const content = (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className="ig-planner-page">
 
       {/* Header */}
       <header className="ig-toolbar">
@@ -51,14 +51,14 @@ export function PlannerPage({ token, embedded = false }: Props) {
       </header>
 
       {/* Step 1 — Recipe selector */}
-      <div className="profile-section-card" style={{ overflow: "visible" }}>
+      <div className="profile-section-card ig-planner-card-open">
         <div className="profile-section-header">
           <span className="profile-section-icon">🍽️</span>
           <h3 className="profile-section-title">
             Step 1 — Select recipes for your week
           </h3>
         </div>
-        <div className="profile-section-body" style={{ overflow: "visible" }}>
+        <div className="profile-section-body">
           <RecipeSearchInput
             query={query}
             results={searchResults}
@@ -70,17 +70,14 @@ export function PlannerPage({ token, embedded = false }: Props) {
             onGenerateFromAI={(name) => void generateRecipe(name)}
           />
           {searchError && (
-            <p style={{ fontSize: 13, color: "#b71c1c", marginTop: 6 }}>
+            <p className="ig-planner-error">
               {searchError}
             </p>
           )}
 
           {plannerRecipes.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <p style={{
-                fontSize: 11, fontWeight: 700, letterSpacing: 1,
-                textTransform: "uppercase", color: "#737373", marginBottom: 10,
-              }}>
+            <div className="ig-planner-plan-list">
+              <p className="ig-planner-section-label">
                 Your plan ({plannerRecipes.length} recipe{plannerRecipes.length !== 1 ? "s" : ""})
               </p>
               <PlannerRecipeList
@@ -105,7 +102,7 @@ export function PlannerPage({ token, embedded = false }: Props) {
           <div className="profile-section-body">
             {!groceryPlan ? (
               <>
-                <p style={{ fontSize: 13, color: "#737373", marginBottom: 16 }}>
+                <p className="ig-planner-helper-text">
                   Based on your selected recipes, current pantry, and taste profile.
                 </p>
                 <button
@@ -116,20 +113,15 @@ export function PlannerPage({ token, embedded = false }: Props) {
                   {planLoading ? "Generating..." : "Generate grocery list →"}
                 </button>
                 {planError && (
-                  <p style={{ fontSize: 13, color: "#b71c1c", marginTop: 8 }}>
+                  <p className="ig-planner-error">
                     {planError}
                   </p>
                 )}
               </>
             ) : (
               <>
-                <div style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  marginBottom: 16,
-                }}>
-                  <p style={{ fontSize: 13, color: "#737373", margin: 0 }}>
+                <div className="ig-planner-summary-bar">
+                  <p className="ig-planner-summary-text">
                     {groceryPlan.recipeCount} recipe{groceryPlan.recipeCount !== 1 ? "s" : ""} ·{" "}
                     {groceryPlan.toBuy.length} items to buy ·{" "}
                     {groceryPlan.alreadyHave.length} already in pantry
@@ -154,18 +146,12 @@ export function PlannerPage({ token, embedded = false }: Props) {
 
       {/* Empty state */}
       {plannerRecipes.length === 0 && (
-        <div style={{
-          textAlign: "center",
-          padding: "40px 20px",
-          border: "1px dashed #dbdbdb",
-          borderRadius: 12,
-          color: "#737373",
-        }}>
-          <p style={{ fontSize: 32, marginBottom: 12 }}>🗓️</p>
-          <p style={{ fontSize: 15, fontWeight: 600, color: "#262626", marginBottom: 6 }}>
+        <div className="ig-planner-empty">
+          <p className="ig-planner-empty-icon">🗓️</p>
+          <p className="ig-planner-empty-title">
             Plan your week
           </p>
-          <p style={{ fontSize: 13 }}>
+          <p className="ig-planner-empty-copy">
             Search for recipes above or type any dish name to generate one with AI.
           </p>
         </div>

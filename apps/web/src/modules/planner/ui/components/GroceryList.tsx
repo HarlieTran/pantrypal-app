@@ -7,21 +7,16 @@ type Props = {
 
 export function GroceryList({ plan, onRemoveItem }: Props) {
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div className="ig-planner-grocery">
 
       {/* Allergen warnings */}
       {plan.allergenWarnings.length > 0 && (
-        <div style={{
-          padding: "12px 16px",
-          background: "#fff3e0",
-          border: "1px solid #ffe0b2",
-          borderRadius: 8,
-        }}>
-          <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#e65100" }}>
+        <div className="ig-planner-warning ig-planner-warning-allergen">
+          <p className="ig-planner-warning-title ig-planner-warning-title-allergen">
             ⚠️ Allergen warnings
           </p>
           {plan.allergenWarnings.map((w, i) => (
-            <p key={i} style={{ margin: "4px 0", fontSize: 13, color: "#e65100" }}>
+            <p key={i} className="ig-planner-warning-copy ig-planner-warning-copy-allergen">
               <strong>{w.name}</strong> — contains <strong>{w.allergen}</strong>
               {" "}(in {w.foundIn.join(", ")})
             </p>
@@ -31,17 +26,12 @@ export function GroceryList({ plan, onRemoveItem }: Props) {
 
       {/* Dislike warnings */}
       {plan.dislikeWarnings.length > 0 && (
-        <div style={{
-          padding: "12px 16px",
-          background: "#fafafa",
-          border: "1px solid #efefef",
-          borderRadius: 8,
-        }}>
-          <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "#737373" }}>
+        <div className="ig-planner-warning ig-planner-warning-dislike">
+          <p className="ig-planner-warning-title ig-planner-warning-title-dislike">
             👎 Contains ingredients you dislike
           </p>
           {plan.dislikeWarnings.map((w, i) => (
-            <p key={i} style={{ margin: "4px 0", fontSize: 13, color: "#737373" }}>
+            <p key={i} className="ig-planner-warning-copy ig-planner-warning-copy-dislike">
               <strong>{w.name}</strong> (in {w.foundIn.join(", ")})
             </p>
           ))}
@@ -50,58 +40,34 @@ export function GroceryList({ plan, onRemoveItem }: Props) {
 
       {/* To buy */}
       <div>
-        <p style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: 1,
-          textTransform: "uppercase", color: "#737373", marginBottom: 10,
-        }}>
+        <p className="ig-planner-grocery-section-label">
           🛒 To buy ({plan.toBuy.length} items)
         </p>
         {plan.toBuy.length === 0 ? (
-          <p style={{ fontSize: 13, color: "#737373" }}>
+          <p className="ig-planner-grocery-empty">
             Nothing to buy — your pantry covers everything!
           </p>
         ) : (
-          <div style={{ display: "grid", gap: 6 }}>
+          <div className="ig-planner-grocery-list">
             {plan.toBuy.map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  background: "#fafafa",
-                  border: "1px solid #efefef",
-                }}
-              >
+              <div key={i} className="ig-planner-grocery-item">
                 <div>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#262626" }}>
+                  <p className="ig-planner-grocery-copy">
                     {item.name}
                   </p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#a8a8a8" }}>
+                  <p className="ig-planner-grocery-meta">
                     for {item.neededFor.join(", ")}
                   </p>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 13, color: "#737373", fontWeight: 600 }}>
+                <div className="ig-planner-grocery-actions">
+                  <span className="ig-planner-grocery-qty">
                     {item.quantity} {item.unit}
                   </span>
                   <button
                     type="button"
                     onClick={() => onRemoveItem(i)}
                     aria-label={`Remove ${item.name} from grocery list`}
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 999,
-                      border: "1px solid #dbdbdb",
-                      background: "#fff",
-                      color: "#8a8a8a",
-                      cursor: "pointer",
-                      fontSize: 14,
-                      lineHeight: 1,
-                    }}
+                    className="ig-planner-grocery-remove"
                   >
                     x
                   </button>
@@ -115,35 +81,21 @@ export function GroceryList({ plan, onRemoveItem }: Props) {
       {/* Already have */}
       {plan.alreadyHave.length > 0 && (
         <div>
-          <p style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: 1,
-            textTransform: "uppercase", color: "#737373", marginBottom: 10,
-          }}>
+          <p className="ig-planner-grocery-section-label">
             ✅ Already in pantry ({plan.alreadyHave.length} items)
           </p>
-          <div style={{ display: "grid", gap: 6 }}>
+          <div className="ig-planner-pantry-list">
             {plan.alreadyHave.map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  background: "#f0faf0",
-                  border: "1px solid #c8e6c9",
-                }}
-              >
+              <div key={i} className="ig-planner-pantry-item">
                 <div>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#2e7d32" }}>
+                  <p className="ig-planner-pantry-copy">
                     {item.name}
                   </p>
-                  <p style={{ margin: 0, fontSize: 11, color: "#a8a8a8" }}>
+                  <p className="ig-planner-pantry-meta">
                     for {item.neededFor.join(", ")}
                   </p>
                 </div>
-                <span style={{ fontSize: 13, color: "#2e7d32", fontWeight: 600 }}>
+                <span className="ig-planner-pantry-qty">
                   have {item.pantryQuantity} {item.unit}
                 </span>
               </div>

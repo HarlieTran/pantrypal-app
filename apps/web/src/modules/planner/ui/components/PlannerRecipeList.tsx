@@ -9,76 +9,55 @@ type Props = {
 export function PlannerRecipeList({ recipes, onUpdateServings, onRemove }: Props) {
   if (recipes.length === 0) {
     return (
-      <p style={{ fontSize: 13, color: "#737373", textAlign: "center", padding: "20px 0" }}>
+      <p className="ig-planner-recipes-empty">
         No recipes added yet. Search above to add recipes to your plan.
       </p>
     );
   }
 
   return (
-    <div style={{ display: "grid", gap: 8 }}>
+    <div className="ig-planner-recipes-list">
       {recipes.map((r) => (
-        <div
-          key={r.recipeId}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "10px 12px",
-            borderRadius: 8,
-            border: "1px solid #efefef",
-            background: "#fafafa",
-          }}
-        >
+        <div key={r.recipeId} className="ig-planner-recipe-card">
           {/* Image */}
           {r.image && (
             <img
               src={r.image}
               alt={r.title}
-              style={{ width: 44, height: 44, borderRadius: 6, objectFit: "cover", flexShrink: 0 }}
+              className="ig-planner-recipe-thumb"
             />
           )}
 
           {/* Info */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#262626" }}>
+          <div className="ig-planner-recipe-meta">
+            <p className="ig-planner-recipe-title">
               {r.title}
               {r.isAiGenerated && (
-                <span style={{ marginLeft: 6, fontSize: 10, color: "#dc2743", fontWeight: 700 }}>
+                <span className="ig-planner-recipe-ai">
                   AI
                 </span>
               )}
             </p>
-            <p style={{ margin: 0, fontSize: 11, color: "#737373" }}>
+            <p className="ig-planner-recipe-status">
               {r.isPantryReady ? "✅ Pantry ready" : "⭕ Missing ingredients"}
             </p>
           </div>
 
           {/* Servings control */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <span style={{ fontSize: 11, color: "#737373" }}>Servings</span>
+          <div className="ig-planner-servings">
+            <span className="ig-planner-servings-label">Servings</span>
             <button
               onClick={() => onUpdateServings(r.recipeId, Math.max(1, r.targetServings - 1))}
-              style={{
-                width: 24, height: 24, borderRadius: 6,
-                border: "1px solid #dbdbdb", background: "#fff",
-                cursor: "pointer", fontSize: 14, display: "flex",
-                alignItems: "center", justifyContent: "center",
-              }}
+              className="ig-planner-servings-button"
             >
               −
             </button>
-            <span style={{ fontSize: 13, fontWeight: 600, minWidth: 20, textAlign: "center" }}>
+            <span className="ig-planner-servings-count">
               {r.targetServings}
             </span>
             <button
               onClick={() => onUpdateServings(r.recipeId, Math.min(20, r.targetServings + 1))}
-              style={{
-                width: 24, height: 24, borderRadius: 6,
-                border: "1px solid #dbdbdb", background: "#fff",
-                cursor: "pointer", fontSize: 14, display: "flex",
-                alignItems: "center", justifyContent: "center",
-              }}
+              className="ig-planner-servings-button"
             >
               +
             </button>
@@ -87,10 +66,7 @@ export function PlannerRecipeList({ recipes, onUpdateServings, onRemove }: Props
           {/* Remove */}
           <button
             onClick={() => onRemove(r.recipeId)}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              fontSize: 16, color: "#a8a8a8", padding: 4, flexShrink: 0,
-            }}
+            className="ig-planner-remove-recipe"
           >
             ✕
           </button>
