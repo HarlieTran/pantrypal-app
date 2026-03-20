@@ -299,6 +299,7 @@
 .profile-summary-top-side {
   display: grid;
   gap: 16px;
+  min-width: 0;
 }
 
 .profile-summary-side-card {
@@ -379,7 +380,7 @@
   line-height: 1.02;
   letter-spacing: -1px;
   color: var(--ink);
-  max-width: 11ch;
+  max-width: 13ch;
 }
 
 .profile-intelligence-body {
@@ -870,6 +871,33 @@
   .profile-intelligence-title {
     max-width: none;
   }
+}
+
+.ig-profile-embedded .profile-summary-top,
+.ig-profile-embedded .profile-intelligence-hero,
+.ig-profile-embedded .profile-intelligence-grid {
+  grid-template-columns: 1fr;
+}
+
+.ig-profile-embedded .profile-intelligence-hero {
+  padding: 24px;
+}
+
+.ig-profile-embedded .profile-intelligence-title {
+  max-width: none;
+  font-size: clamp(26px, 4.6vw, 40px);
+}
+
+.ig-profile-embedded .profile-intelligence-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ig-profile-embedded .profile-suggestions-grid {
+  grid-template-columns: 1fr;
+}
+
+.ig-profile-embedded .profile-prediction-header {
+  flex-wrap: wrap;
 }
 
 @media (prefers-reduced-motion: reduce) {
